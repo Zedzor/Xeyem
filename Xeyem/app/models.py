@@ -1,5 +1,8 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
 
 class UserManager(BaseUserManager):
@@ -48,7 +51,7 @@ class User(AbstractUser):
     
     
 class Dashboard(models.Model):
-    user_id             = models.ForeignKey(User, on_delete=models.CASCADE)
+    user_id             = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name                = models.CharField(max_length=50)
     default_dashboard   = models.BooleanField(default=False)
     balance             = models.BooleanField(default=True)
@@ -60,9 +63,13 @@ class Dashboard(models.Model):
     illegal_activity    = models.BooleanField(default=True)
     web_appereances     = models.BooleanField(default=True)
     
+    @receiver(post_save, sender=settings.AUTH_USER_MODEL)
+    def create_default_dashbord(sender, instance, created, **kwargs):
+        if created:
+            Dashboard.objects.create(user_id=instance, name="Default Dashboard", default_dashboard=True)
     
 class Search(models.Model):
-    user_id         = models.ForeignKey(User, on_delete=models.CASCADE)
+    user_id         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     wallet_address  = models.CharField(max_length=100)
     search_date     = models.DateTimeField(auto_now=True)
     notes           = models.CharField(max_length=500, null=True ,blank=True)

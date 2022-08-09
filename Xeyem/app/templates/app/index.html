@@ -18,81 +18,102 @@
     </head>
     <body>
         <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <!-- Container wrapper -->
-    <div class="container-fluid px-5">
-      <!-- Toggle button -->
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarSupportedContent"
-        aria-controls="navbarSupportedContent"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <i class="fas fa-bars"></i>
-      </button>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <!-- Container wrapper -->
+            <div class="container-fluid px-5">
+                <!-- Toggle button -->
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation"
+                >
+                    <i class="fas fa-bars"></i>
+                </button>
   
-      <!-- Collapsible wrapper -->
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <!-- Navbar brand -->
-        <a class="navbar-brand mt-2 mt-lg-0 mb-1 fs-3" href="/">
-          Xeyem
-        </a>
-        {% if user.is_authenticated %}
-        <!-- Left links -->
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0 px-4 gap-2">
-          <li class="nav-item">
-            <a class="nav-link" href="#">Dashboards</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">My Searches</a>
-          </li>
-        </ul>        
-        {% endif %}
-      </div>
-      <!-- Collapsible wrapper -->
+                <!-- Collapsible wrapper -->
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <!-- Navbar brand -->
+                    <a class="navbar-brand mt-2 mt-lg-0 mb-1 fs-3" href="/">
+                        Xeyem
+                    </a>
+                    {% if user.is_authenticated %}
+                    <!-- Left links -->
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 px-4 gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Dashboards</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">My Searches</a>
+                        </li>
+                    </ul>        
+                    {% endif %}
+                </div>
+                <!-- Collapsible wrapper -->
   
-      <!-- Right elements -->
-      <div class="d-flex align-items-center">
-        {% if user.is_authenticated %}
-        <!-- Avatar -->
-        <div class="dropdown">
-          <a
-            class="d-flex align-items-center text-decoration-none text-reset"
-            href="#"
-            id="navbarDropdownMenuAvatar"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
-                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-            </svg>
-          </a>
-          <ul
-            class="dropdown-menu dropdown-menu-end"
-            aria-labelledby="navbarDropdownMenuAvatar"
-          >
-            <li>
-              <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
-            </li>
-          </ul>
-        </div>
-        {% else %} 
-        <div class="d-grid gap-3 d-md-flex justify-content-md-end">
-            <a class="btn btn-outline-primary rounded-pill px-3 pb-2" href="{% url 'login' %}" role="button">Log in</a>
-            <a class="btn btn-primary rounded-pill px-3 pb-2" href="{% url 'register' %}" role="button">Register</a>
-        </div>
-        {% endif %}
+                <!-- Right elements -->
+                <div class="d-flex align-items-center">
+                    {% if user.is_authenticated %}
+                    <!-- Avatar -->
+                    <div class="dropdown">
+                        <a
+                        class="d-flex align-items-center text-decoration-none text-reset"
+                        href="#"
+                        id="navbarDropdownMenuAvatar"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                            </svg>
+                        </a>
+                        <ul
+                            class="dropdown-menu dropdown-menu-end"
+                            aria-labelledby="navbarDropdownMenuAvatar"
+                        >
+                            <li>
+                                <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Avatar -->
+                    {% else %} 
+                    <!-- Login and register buttons -->
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+                        <a class="btn btn-outline-primary rounded-pill px-3 pb-2" href="{% url 'login' %}" role="button">Log in</a>
+                        <a class="btn btn-primary rounded-pill px-3 pb-2" href="{% url 'register' %}" role="button">Register</a>
+                    </div>
+                    <!-- Login and register buttons -->
+                    {% endif %}
         
-      </div>
-      <!-- Right elements -->
-    </div>
-    <!-- Container wrapper -->
-  </nav>
-  <!-- Navbar --> 
+                </div>
+                <!-- Right elements -->
+            </div>
+            <!-- Container wrapper -->
+        </nav>
+        <!-- Navbar --> 
+
+        {% if user.is_authenticated %}
+        <div class="container">
+            {% block content %}
+            {% endblock content %}
+        </div>
+        {% else %}
+        <div class="position-absolute top-50 start-50 translate-middle fs-1"> 
+            <center> 
+                <div>
+                    Welcome to Xeyem. 
+                </div>
+                <div>
+                    Log in to start investigating.
+                </div>
+            </center>
+        </div>
+        {% endif %}
         
     </body>
 </html>

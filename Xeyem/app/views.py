@@ -2,14 +2,14 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.views import LoginView
-from django.contrib.auth.forms import UserCreationForm
+from .forms import UserCreationForm
 
 from django.contrib.auth import login
 from django.urls import reverse_lazy
 
-
 # Create your views here.
 
+# User views
 class CustomLoginView(LoginView):
     template_name = 'app/login.html'
     fields = '__all__'
@@ -34,6 +34,11 @@ class RegisterPage(FormView):
         if self.request.user.is_authenticated:
             return redirect('login')
         return super(RegisterPage, self).get(*args, **kwargs)
+
+
+# Dashboard Views
+
+
 
 class IndexView(TemplateView):
     template_name = 'app/index.html'
