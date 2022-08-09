@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.dispatch import receiver
@@ -67,6 +67,14 @@ class Dashboard(models.Model):
     def create_default_dashbord(sender, instance, created, **kwargs):
         if created:
             Dashboard.objects.create(user_id=instance, name="Default Dashboard", default_dashboard=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.default_dashboard:
+            return super(Dashboard, self).save(*args, **kwargs)
+        with transaction.atomic():
+            Dashboard.objects.filter(
+                default_dashboard=True).update(default_dashboard=False)
+            return super(Dashboard, self).save(*args, **kwargs)
     
 class Search(models.Model):
     user_id         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
