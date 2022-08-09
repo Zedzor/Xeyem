@@ -52,7 +52,7 @@ class User(AbstractUser):
     
 class Dashboard(models.Model):
     user_id             = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    name                = models.CharField(max_length=50)
+    name                = models.CharField(max_length=50, default="New Dashboard")
     default_dashboard   = models.BooleanField(default=False)
     balance             = models.BooleanField(default=True)
     balance_time        = models.BooleanField(default=True)
