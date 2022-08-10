@@ -51,6 +51,7 @@ class DashboardList(ListView):
             context['dashboards'] = context['dashboards'].filter(user_id=self.request.user)
             context['count'] = context['dashboards'].count()
             context['form'] = DashboardCreate.get_form_class(DashboardCreate)
+            context['form_update'] = DashboardUpdate.get_form_class(DashboardUpdate)
             
             search_input = self.request.GET.get('search-area') or ''
             if search_input:
@@ -77,6 +78,23 @@ class DashboardCreate(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.user_id = self.request.user
         return super(DashboardCreate, self).form_valid(form)
+    
+class DashboardUpdate(LoginRequiredMixin, UpdateView):
+    model = Dashboard
+    fields = [
+        'name', 'default_dashboard', 'balance', 'balance_time', 
+        'fst_lst_transaction', 'transactions', 'transactions_stats', 
+        'related_addresses', 'illegal_activity', 'web_appereances'
+    ]
+    success_url = reverse_lazy('index')
+    
+    def get(self, *args, **kwargs):
+        return redirect('index')
+    
+    def form_valid(self, form):
+        form.instance.user_id = self.request.user
+        return super(DashboardUpdate, self).form_valid(form)
+
 
 # class IndexView(TemplateView):
 #     template_name = 'app/index.html'
