@@ -1,6 +1,8 @@
+from multiprocessing import context
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -63,6 +65,15 @@ class DashboardList(ListView):
 
         return context
 
+class DashboardDetail(LoginRequiredMixin, DetailView):
+    model = Dashboard
+    context_object_name = 'dashboard'
+    template_name = 'app/dashboard.html'
+    
+    def get_queryset(self):
+        qs = super(DashboardDetail, self).get_queryset().filter(user_id=self.request.user)
+        return qs
+    
 class DashboardCreate(LoginRequiredMixin, CreateView):
     model = Dashboard
     fields = [

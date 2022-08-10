@@ -21,7 +21,7 @@
     {% for dashboard in dashboards %}
     <div class="dashboard-wrapper" data-position="{{dashboard.pk}}">
         <div class="dashboard-name">
-            <a href="#">{{dashboard.name}}</a> 
+            <a href="{% url 'dashboard' dashboard.pk %}">{{dashboard.name}}</a> 
             <div class="dashboard-update-wrapper">
                 <button type="button" class="btn btn-link text-decoration-none text-reset p-0 m-1" data-bs-toggle="modal" data-bs-target="#dashboardUpdate{{dashboard.pk}}">
                     <span class="material-icons">edit</span>
