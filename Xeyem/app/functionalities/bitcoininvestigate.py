@@ -1,3 +1,4 @@
+from typing import final
 from requests import get
 
 SATOSHI_DIVISOR = 100000000
@@ -30,6 +31,7 @@ def get_common_info(address: str) -> dict:
         return __blockchain_info_parser(json_response, address)
 
 def balance(info: dict) -> dict:   
+    final_balance = info['final_balance'] / SATOSHI_DIVISOR if info is not None else 'Error al obtener balance'
     return {
-        'balance': info['final_balance'] / SATOSHI_DIVISOR,
+        'balance': final_balance,
     }
