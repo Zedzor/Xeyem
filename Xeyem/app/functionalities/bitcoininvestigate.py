@@ -1,4 +1,3 @@
-from typing import final
 from requests import get
 
 SATOSHI_DIVISOR = 100000000
@@ -34,4 +33,10 @@ def balance(info: dict) -> dict:
     final_balance = info['final_balance'] / SATOSHI_DIVISOR if info is not None else 'Error al obtener balance'
     return {
         'balance': final_balance,
+    }
+    
+def fst_lst_transaction(info: dict) -> dict:
+    return {
+        'first_transaction': info['txs'][0]['time'],
+        'last_transaction': info['txs'][-1]['time'],
     }
