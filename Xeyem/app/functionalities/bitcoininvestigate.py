@@ -20,13 +20,12 @@ def get_common_info(address: str) -> dict:
     if res.ok:
         json_response = res.json()
         txs_n = len(json_response['txs'])
-        while txs_n == 100:
+        if txs_n == 100:
             res2 = get(f'https://blockchain.info/rawaddr/{address}?offset=100')
             if res2.ok:
                 json_response['txs'] += res2.json()['txs']
                 txs_n = len(res2.json()['txs'])
-            else:
-                break
+
         return __blockchain_info_parser(json_response, address)
 
 def balance(info: dict) -> dict:   
