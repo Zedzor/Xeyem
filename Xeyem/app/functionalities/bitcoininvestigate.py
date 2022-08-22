@@ -2,6 +2,10 @@ from requests import get
 from math import ceil
 import pandas as pd
 import ssl
+from bs4 import BeautifulSoup
+import re
+import plotly.express as px
+
 
 SATOSHI_DIVISOR = 100000000
 
@@ -25,24 +29,28 @@ def __get_first_and_last_tx(address: str, n_tx: int) -> tuple:
     
     # We use pandas to get the LAST transaction
     data = pd.read_csv(url+'?format=csv')
-    data = data.reset_index() # we reset the index
+    data = data.reset_index()
     # And finally we return the first row from the date column
     last_tx = f'{data.level_0.iloc[1]}'
     
     # The first transaction is at the last row on the last page
     # the amount of txs for page is 100
-    if n_tx <= 100: # if there is only 1 page we already have it
-        first_tx = f'{data.level_0.iloc[-1]}'
-    else:
+    if n_tx > 100: # if there is only 1 page we already have it
         page_n = ceil(n_tx / 100)
         url += f'?page={page_n}'
 
         data = pd.read_csv(url+'&format=csv')
         data = data.reset_index()
 
-        first_tx = f'{data.level_0.iloc[-1]}'
+    first_tx = f'{data.level_0.iloc[-1]}'
         
     return (first_tx,last_tx)
+
+def __parse_strlist(sl):
+    splitted = re.split(r',(?![^\[\]]*\])',sl)    
+    values_list = [ re.split(",", item[1:-1]) for item in splitted ]
+
+    return values_list
 
 def get_common_info(address: str) -> dict:
     res = get(f'https://blockchain.info/rawaddr/{address}')
@@ -73,3 +81,32 @@ def fst_lst_transaction(info: dict) -> dict:
         'first_transaction': first_transaction,
         'last_transaction': last_transaction,
     }
+    
+def balance_time(address: str) -> dict:
+    url = f'https://bitinfocharts.com/bitcoin/address/{address}'
+    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
+    plt_div = ''
+    
+    res = get(url=url, headers=headers)
+    if res.ok:
+        soup = BeautifulSoup(res.text, 'html.parser')
+        scripts = soup.find_all('script')
+        for script in scripts:
+            if 'd = new Dygraph(document.getElementById("gcontainer")' in script.text:
+                StrList = script.text
+                StrList = '[[' + StrList.split('[[')[-1]
+                StrList = StrList.split(']]')[0] +']]'
+                StrList = StrList.replace("new Date(", '').replace(')','')
+                StrList = StrList[1:-1]
+                dataList = __parse_strlist(StrList)
+                df = pd.DataFrame(dataList, columns=['Date','Balance', 'USD', 'Other'])
+                df['Date'] = pd.to_datetime(df['Date'], unit='ms')
+                df['Balance'] = pd.to_numeric(df['Balance'], errors='coerce')
+                df.drop(['USD','Other'], axis=1, inplace=True)
+                fig = px.line(data_frame=df, x='Date', y='Balance')
+                plt_div = fig.to_html(include_plotlyjs=False, full_html=False, div_id="plt_div")
+                
+    if not plt_div:
+        plt_div = "Couldn't get balance through time"
+    
+    return {'balance_time': plt_div}
