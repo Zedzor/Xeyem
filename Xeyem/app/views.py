@@ -7,7 +7,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormVi
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import Dashboard
+from .models import Dashboard, Search
 from .forms import UserCreationForm
 
 from django.contrib.auth import login
@@ -105,6 +105,40 @@ class DashboardUpdate(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.instance.user_id = self.request.user
         return super(DashboardUpdate, self).form_valid(form)
+
+class DashboardDelete(LoginRequiredMixin, DeleteView):
+    model = Dashboard
+    context_object_name = 'dashboard'
+    success_url = reverse_lazy('index')
+    def get_queryset(self):
+        owner = self.request.user
+        return self.model.objects.filter(user=owner)
+    
+    def get(self, *args, **kwargs):
+        return redirect('index')
+    
+    def form_valid(self, form):
+        form.instance.user_id = self.request.user
+        return super(DashboardDelete, self).form_valid(form)
+
+
+class SearchList(LoginRequiredMixin, ListView):   
+    model = Search
+    context_object_name = 'searches'
+    
+    def get_queryset(self):
+        qs = super(SearchList, self).get_queryset().filter(user_id=self.request.user)
+        return qs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            context['searches'] = context['searches'].filter(user_id=self.request.user)
+            context['count'] = context['searches'].count()
+            context['form'] = SearchUpdate.get_form_class(SearchUpdate)
+                        
+        return context
+
 
 
 # class IndexView(TemplateView):

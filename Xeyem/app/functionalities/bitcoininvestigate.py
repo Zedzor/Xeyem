@@ -1,3 +1,4 @@
+from urllib import response
 from requests import get
 from math import ceil
 import pandas as pd
@@ -5,6 +6,7 @@ import ssl
 from bs4 import BeautifulSoup
 import re
 import plotly.express as px
+from fp.fp import FreeProxy
 
 
 SATOSHI_DIVISOR = 100000000
@@ -14,11 +16,13 @@ def __blockchain_info_parser(json_response: dict, address: str) -> dict:
     # Parsing transaction list
     for tx in json_response['txs']:
         is_in_tx = False
+        # Detecting if the address is in the input or output
         for entry in tx['inputs']:
             if entry['prev_out']['addr'] == address:
                 is_in_tx = True
         tx['is_in_tx'] = is_in_tx
         aux_list.append(tx)
+    # We sort the list by time
     json_response['txs'] = sorted(aux_list, key=lambda d: d['time'])
     return  json_response
 
@@ -52,18 +56,38 @@ def __parse_strlist(sl):
 
     return values_list
 
+def __get_different_proxy(proxies: list) -> str:
+    """Function to get a different proxy from the list avoiding proxy repetition"""
+    proxy = FreeProxy(rand=True).get()
+    while proxy in proxies:
+        proxy = FreeProxy(rand=True).get()
+    return proxy
+
 def get_common_info(address: str) -> dict:
     res = get(f'https://blockchain.info/rawaddr/{address}')
     if res.ok:
         json_response = res.json()
-        txs_n = len(json_response['txs'])
-        # if txs_n == 100:
-        #     res2 = get(f'https://blockchain.info/rawaddr/{address}?offset=100')
-        #     if res2.ok:
-        #         json_response['txs'] += res2.json()['txs']
-        #         txs_n = len(res2.json()['txs'])
-
+        # Total number of requests needed for getting all transactions
+        total_req = ceil(json_response['n_tx'] / 100)
+        # Number of requests to be executed (max 10 == 1000 txs)
+        req_n = total_req if total_req < 10 else 10
+        for i in range(req_n - 1):
+            res_ok = False
+            proxy_list = []
+            failed_count = 0
+            while not res_ok and failed_count < 5:
+                proxy = __get_different_proxy(proxy_list)
+                proxy_list += proxy
+                res = get(f'https://blockchain.info/rawaddr/{address}?offset={i * 100}', proxies={'http': proxy})
+                if res.ok:
+                    json_response['txs'] += res.json()['txs']
+                    res_ok = True
+                else:
+                    failed_count += 1
+                    
         return __blockchain_info_parser(json_response, address)
+    else:
+        return None
 
 def balance(info: dict) -> dict:   
     final_balance = info['final_balance'] / SATOSHI_DIVISOR if info is not None else 'Error al obtener balance'

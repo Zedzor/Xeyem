@@ -6,7 +6,7 @@ import ethereuminvestigate
 
 SHARED_API_FUNCS = {'balance', 'fst_lst_transaction', 'transactions', 'transactions_stats'}
 
-def _get_module(address: str) -> dict:
+def __get_module(address: str) -> dict:
     
     # validate if addr is btc eth or neither and select module 
     if validate('btc', address).valid:
@@ -26,7 +26,7 @@ def execute_search(address: str, funcs: set) -> dict:
   
   # Check if addr exists and get module to use
   try:
-      token_dict = _get_module(address)
+      token_dict = __get_module(address)
   except Http404:
       raise
   else:
@@ -34,7 +34,8 @@ def execute_search(address: str, funcs: set) -> dict:
       if len(SHARED_API_FUNCS.intersection(funcs)) > 0:
           shared_func = getattr(token_dict['module'], 'get_common_info')
           shared_info = shared_func(address)
-
+          if shared_info is None:
+              raise Http404("Address not found")
       # Use returned module and execute requested functionalities
       for item in funcs:
           func = getattr(token_dict['module'], item, None)

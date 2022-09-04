@@ -80,5 +80,5 @@ class Search(models.Model):
     user_id         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     wallet_address  = models.CharField(max_length=100)
     search_date     = models.DateTimeField(auto_now=True)
-    notes           = models.CharField(max_length=500, null=True ,blank=True)
+    notes           = models.TextField(max_length=500, null=True ,blank=True)
     
