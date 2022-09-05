@@ -1,0 +1,26 @@
+{% extends 'app/dashboard_list.html' %}{% block dashboard_form %}
+
+<div class="modal fade show d-block" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <a href="{% url 'index' %}"><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></a>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    {{form.as_p}}
+                    <a href="{% url 'index' %}"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></a>
+                    <!--<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>-->
+                    <!--<input class="button" type="submit" value="Submit">-->
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+  
+{% endblock dashboard_form %}
