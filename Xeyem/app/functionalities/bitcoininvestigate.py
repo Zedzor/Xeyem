@@ -1,3 +1,4 @@
+from cProfile import label
 from urllib import response
 from requests import get
 from math import ceil
@@ -56,6 +57,24 @@ def __get_different_proxy(proxies: list) -> str:
         proxy = FreeProxy(rand=True).get()
     return proxy
 
+def __get_address_list(info: dict) -> dict:
+    if info is not None:
+        txs = info['txs']
+        addresses = {'inputs': [], 'outputs': []}
+        for tx in txs:
+            for inp in tx['inputs']:
+                address_in = inp['prev_out']['addr']
+                if address_in != info['address'] and address_in not in addresses['inputs']:
+                    addresses['inputs'].append(address_in)
+            for out in tx['out']:
+                address_out = out['addr']
+                if address_out != info['address'] and address_out not in addresses['outputs']:
+                    addresses['outputs'].append(address_out)
+    else:
+        addresses = 'Error al obtener direcciones'
+        
+    return addresses
+
 def __get_wallets_from_walletexplorer():
     url = 'https://www.walletexplorer.com'
     proxy = __get_different_proxy([])
@@ -110,14 +129,42 @@ def __get_report_from_bitcoinabuse(address: str) -> str:
     
     return abuse
 
+
+
+def get_labels(addresses: list) -> dict:
+    """Gets the label from walletexplorer.com for the given address"""
+    labels = {}
+    proxy_list = []
+    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
+    for address in addresses:
+        url = f'https://www.walletexplorer.com/address/{address}'
+        div = label = None
+        steps = 0
+        while div is None or steps > 5:
+            steps += 1 # Avoid infinite loop
+            proxy = __get_different_proxy(proxy_list)
+            proxy_list.append(proxy)
+            response = requests.get(url, headers=headers, proxies={'http': proxy})
+            if response.ok:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                div = soup.find('div', {'class': 'walletnote'})
+                if div is not None:
+                    label = div.find('a')['href'].split('/')[-1]
+                    labels[address] = label
+                elif steps > 5:
+                    labels[address] = None      
+        print(f'Address: {address} - Label: {label}')
+            
+    return labels
+
 def get_common_info(address: str) -> dict:
     res = get(f'https://blockchain.info/rawaddr/{address}')
     if res.ok:
         json_response = res.json()
         # Total number of requests needed for getting all transactions
         total_req = ceil(json_response['n_tx'] / 100)
-        # Number of requests to be executed (max 10 == 1000 txs)
-        req_n = total_req if total_req < 10 else 10
+        # Number of requests to be executed (max 5 == 500 txs)
+        req_n = total_req if total_req < 5 else 5
         for i in range(1, req_n):
             res_ok = False
             proxy_list = []
@@ -214,6 +261,38 @@ def transactions(info: dict) -> dict:
     return {
         'transactions': transactions,
     }
+
+def transaction_stats(info: dict) -> dict:
+    if info is not None:
+        addresses = __get_address_list(info)
+        all_addresses = [*set(addresses['inputs'] + addresses['outputs'])]
+        proxy_list = []
+        addresses_dict = {}
+        # label each address using walletexplorer and bitcoinabuse
+        for address in all_addresses:
+            proxy = __get_different_proxy(proxy_list)
+            proxy_list += proxy
+            label = __get_address_label(address, proxy)
+            addresses_dict[address] = label
+        # get how many times a label appears in the inputs
+        labels = {}
+        for address in addresses['inputs']:
+            label = addresses_dict[address]
+            if label in labels:
+                labels[label] += 1
+            else:
+                labels[label] = 1
+        # get how many times a label appears in the outputs
+        for address in addresses['outputs']:
+            label = addresses_dict[address]
+            if label in labels:
+                labels[label] += 1
+            else:
+                labels[label] = 1
+        # get the label stats for the inputs
+        
+            
+            
 
 
 def illegal_activity(address: str) -> dict:
