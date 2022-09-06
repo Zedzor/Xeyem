@@ -1,0 +1,17 @@
+{% extends 'app/index.html' %} {% block content %}
+
+<h2>My searches</h2>
+
+{% for search in searches %}
+<div class='search-wrapper'>
+    {{search.wallet_address}}
+    {{search.search_date}}
+    {{search.notes}}
+</div>
+{% empty %}
+<div class='search-wrapper'>
+    <p>You have no searches</p>
+</div>
+{% endfor %}
+
+{% endblock content %}

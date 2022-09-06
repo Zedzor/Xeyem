@@ -61,7 +61,7 @@ class Dashboard(models.Model):
     transactions_stats  = models.BooleanField(default=True)
     related_addresses   = models.BooleanField(default=True)
     illegal_activity    = models.BooleanField(default=True)
-    web_appereances     = models.BooleanField(default=True)
+    web_appearances     = models.BooleanField(default=True)
     
     @receiver(post_save, sender=settings.AUTH_USER_MODEL)
     def create_default_dashbord(sender, instance, created, **kwargs):

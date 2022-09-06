@@ -1,6 +1,6 @@
 from django import urls
 from django.urls import path
-from .views import DashboardDetail, DashboardList, CustomLoginView, DashboardUpdate, RegisterPage, DashboardCreate
+from .views import DashboardDetail, DashboardList, CustomLoginView, DashboardUpdate, RegisterPage, DashboardCreate, SearchList
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -11,5 +11,8 @@ urlpatterns = [
     
     path('dashboard-create/', DashboardCreate.as_view(), name='dashboard-create'),
     path('dashboard-update/<int:pk>/', DashboardUpdate.as_view(), name='dashboard-update'),
-    path('dashboard/<int:pk>/', DashboardDetail.as_view(), name='dashboard')
+    path('dashboard/<int:pk>/', DashboardDetail.as_view(), name='dashboard'),
+
+    path('my-searches/', SearchList.as_view(), name='my-searches'),
+
 ]

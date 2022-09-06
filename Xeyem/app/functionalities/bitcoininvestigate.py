@@ -1,5 +1,6 @@
 from cProfile import label
 from urllib import response
+from weakref import proxy
 from requests import get
 from math import ceil
 import pandas as pd
@@ -10,16 +11,11 @@ import plotly.express as px
 from fp.fp import FreeProxy
 from googlesearch import search
 from datetime import datetime
+from io import StringIO
 
 
 BITCOINABUSE_API_TOKEN = 'xpq3nxlgXOcyafM6QaBCXCu3oKjArNT9Q2bZfzIX'
 SATOSHI_DIVISOR = 100000000
-
-def __blockchain_info_parser(json_response: dict, address: str) -> dict:
-    aux_list = []
-    # We sort the list by time
-    json_response['txs'] = sorted(aux_list, key=lambda d: d['time'])
-    return  json_response
 
 def __get_first_and_last_tx(address: str, n_tx: int) -> tuple:
     url = f'https://www.walletexplorer.com/address/{address}'
@@ -27,10 +23,9 @@ def __get_first_and_last_tx(address: str, n_tx: int) -> tuple:
     ssl._create_default_https_context = ssl._create_unverified_context
     
     # We use pandas to get the LAST transaction
-    data = pd.read_csv(url+'?format=csv')
-    data = data.reset_index()
+    df = pd.read_csv(url+'?format=csv', skiprows=[0])
     # And finally we return the first row from the date column
-    last_tx = f'{data.level_0.iloc[1]}'
+    last_tx = df['date'].iloc[0]
     
     # The first transaction is at the last row on the last page
     # the amount of txs for page is 100
@@ -38,10 +33,9 @@ def __get_first_and_last_tx(address: str, n_tx: int) -> tuple:
         page_n = ceil(n_tx / 100)
         url += f'?page={page_n}'
 
-        data = pd.read_csv(url+'&format=csv')
-        data = data.reset_index()
+        df = pd.read_csv(url+'&format=csv', skiprows=[0])
 
-    first_tx = f'{data.level_0.iloc[-1]}'
+    first_tx = df['date'].iloc[-1]
         
     return (first_tx,last_tx)
 
@@ -99,7 +93,9 @@ def __get_wallets_from_walletexplorer():
         return None
 
 def __get_label_from_address(address: str) -> str:
-    res = get(f'https://www.walletexplorer.com/address/{address}')
+    proxy = FreeProxy(rand=True, elite=True).get()
+    url = f'https://www.walletexplorer.com/address/{address}'
+    res = get(url=url, proxies={'http': proxy})
     if res.ok:
         soup = BeautifulSoup(res.text, 'html.parser')
         div = soup.find('div', {'class': 'walletnote'})
@@ -173,14 +169,14 @@ def get_common_info(address: str) -> dict:
             while not res_ok and failed_count < 5:
                 proxy = __get_different_proxy(proxy_list)
                 proxy_list += proxy
-                res = get(f'https://blockchain.info/rawaddr/{address}?offset={i * 100}', proxies={'http': proxy})
+                res = get(f'https://blockchain.info/rawaddr/{address}?offset={i*100}', proxies={'http': proxy})
                 if res.ok:
                     json_response['txs'] += res.json()['txs']
                     res_ok = True
                 else:
                     failed_count += 1
-                    
-        return __blockchain_info_parser(json_response, address)
+        json_response['txs'].sort(key=lambda tx: tx['time'], reverse=True)
+        return json_response
     else:
         return None
 
@@ -231,8 +227,10 @@ def balance_time(address: str) -> dict:
     return {'balance_time': plt_div}
 
 def transactions(info: dict) -> dict:
+    print(info.values())
     if info is not None:
         txs = info['txs']
+        print(f'Number of transactions: {len(txs)}')
         transactions = []
         for tx in txs:
             inputs = []
@@ -266,7 +264,7 @@ def transactions(info: dict) -> dict:
 def transaction_stats(info: dict) -> dict:
     if info is not None:
         addresses = __get_address_list(info)
-        all_addresses = [*set(addresses['inputs'] + addresses['outputs'])]
+        all_addresses = list(set(addresses['inputs'] + addresses['outputs']))
         proxy_list = []
         addresses_dict = {}
         # label each address using walletexplorer and bitcoinabuse
@@ -293,7 +291,29 @@ def transaction_stats(info: dict) -> dict:
         # get the label stats for the inputs
         
             
-            
+def related_addresses(address: str) -> dict: 
+    label = __get_label_from_address(address)
+    ssl._create_default_https_context = ssl._create_unverified_context
+    url = f'https://walletexplorer.com/wallet/{label}/addresses?format=csv'
+    proxy = FreeProxy(rand=True, elite=True).get()
+    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
+    res = get(url=url, headers=headers, proxies={'http': proxy})
+    if res.ok:
+        df = pd.read_csv(StringIO(res.text), skiprows=[0])
+        addresses = df['address'].to_list()
+        related = {
+            'addresses': addresses,
+        }
+        if len(addresses) == 100:
+                related['url'] = f'https://walletexplorer.com/wallet/{label}/addresses',
+    else:
+        related = {
+            'addresses': 'Error al obtener direcciones relacionadas.'
+            }
+    
+    return related
+
+    
 
 
 def illegal_activity(address: str) -> dict:
@@ -317,11 +337,11 @@ def illegal_activity(address: str) -> dict:
         'illegal_activity': illegal_activity,
     }
 
-def web_appareances(address: str) -> dict:
+def web_appearances(address: str) -> dict:
     """Returns a list of urls where the address has been found"""
     query = f'"{address}" -site:blockexplorer.one -site:blockcypher.herokuapp.com -site:coin-cap.pro -site:btc.exan.tech -site:blockchain.info -site:btctocad.com -site:esplora.blockstream.com -site:bitcoinblockexplorers.com -site:bitinfocharts.com -site:bitcoinabuse.com -site:walletexplorer.com -site:blockchair.com -site:blockchain.com -site:blockcypher.com -site:blockstream.info -site:tokenscope.com'
     urls = list(search(query, tld="com", num=10, stop=10))
     appearances = urls if urls else "No se han encontrado resultados"
     return {
-        'web_appareances': appearances,
+        'web_appearances': appearances,
     }

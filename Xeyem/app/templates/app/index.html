@@ -45,10 +45,10 @@
                     <!-- Left links -->
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0 px-4 gap-2">
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Dashboards</a>
+                            <a class="nav-link" href={% url 'index' %}>Dashboards</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">My Searches</a>
+                            <a class="nav-link" href={% url 'my-searches' %}>My Searches</a>
                         </li>
                     </ul>        
                     {% endif %}

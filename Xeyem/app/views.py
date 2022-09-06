@@ -79,7 +79,7 @@ class DashboardCreate(LoginRequiredMixin, CreateView):
     fields = [
         'name', 'default_dashboard', 'balance', 'balance_time', 
         'fst_lst_transaction', 'transactions', 'transactions_stats', 
-        'related_addresses', 'illegal_activity', 'web_appereances'
+        'related_addresses', 'illegal_activity', 'web_appearances'
     ]
     success_url = reverse_lazy('index')
     
@@ -95,7 +95,7 @@ class DashboardUpdate(LoginRequiredMixin, UpdateView):
     fields = [
         'name', 'default_dashboard', 'balance', 'balance_time', 
         'fst_lst_transaction', 'transactions', 'transactions_stats', 
-        'related_addresses', 'illegal_activity', 'web_appereances'
+        'related_addresses', 'illegal_activity', 'web_appearances'
     ]
     success_url = reverse_lazy('index')
     
@@ -135,7 +135,7 @@ class SearchList(LoginRequiredMixin, ListView):
         if self.request.user.is_authenticated:
             context['searches'] = context['searches'].filter(user_id=self.request.user)
             context['count'] = context['searches'].count()
-            context['form'] = SearchUpdate.get_form_class(SearchUpdate)
+            # context['form'] = SearchUpdate.get_form_class(SearchUpdate)
                         
         return context
 
