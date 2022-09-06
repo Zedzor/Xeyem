@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import re
 import plotly.express as px
 from fp.fp import FreeProxy
+from googlesearch import search
 from datetime import datetime
 
 
@@ -314,4 +315,13 @@ def illegal_activity(address: str) -> dict:
         illegal_activity =__get_report_from_bitcoinabuse(address)
     return {
         'illegal_activity': illegal_activity,
+    }
+
+def web_appareances(address: str) -> dict:
+    """Returns a list of urls where the address has been found"""
+    query = f'"{address}" -site:blockexplorer.one -site:blockcypher.herokuapp.com -site:coin-cap.pro -site:btc.exan.tech -site:blockchain.info -site:btctocad.com -site:esplora.blockstream.com -site:bitcoinblockexplorers.com -site:bitinfocharts.com -site:bitcoinabuse.com -site:walletexplorer.com -site:blockchair.com -site:blockchain.com -site:blockcypher.com -site:blockstream.info -site:tokenscope.com'
+    urls = list(search(query, tld="com", num=10, stop=10))
+    appearances = urls if urls else "No se han encontrado resultados"
+    return {
+        'web_appareances': appearances,
     }
