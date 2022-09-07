@@ -1,7 +1,7 @@
 from django.http import Http404
 from coinaddrvalidator import validate
-import bitcoininvestigate 
-import ethereuminvestigate
+from . import bitcoininvestigate 
+from . import ethereuminvestigate
 
 
 SHARED_API_FUNCS = {'balance', 'fst_lst_transaction', 'transactions', 'transactions_stats'}

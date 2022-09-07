@@ -1,114 +1,132 @@
 {% extends 'app/index.html' %} {% block content %}
-
+{% load app_extras %}
+{% load static %}
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<div class="header-bar">
-    <div>
-        <h1>Hello {{request.user|title}}</h1>
-        <h3 style="margin:0">You have <i>{{count}}</i> dashboard{{ count|pluralize:"s" }}</h3>
-    </div>
-</div>
 
+<style>
+    .flex-grow {
+        flex: 1;
+    }
+</style>
 
-<div id="search-add-wrapper">
-    <form method="GET" style="display: flex;">
-        <input type='text' name='search-area' placeholder="Search your dashboard" value="{{search_input}}">
-        <input class="button" type="submit" value='Search'>
+<div id="search-div" class="w-50 mx-auto my-4">
+    <form class="form-inline" method="POST" action="{% url 'dashboard' default_dashboard %}">
+        {% csrf_token %}
+        <div class="input-group mb-3">
+            <input class="form-control mr-sm-2" aria-label="Search" type="text" placeholder="Search Address" name="address" maxlength="100" required="" id="id_address">  
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
+            </div>
+        </div>
     </form>
 </div>
 
-<div id="dashboardlist" class="dashboard-items-wrapper">
-    {% for dashboard in dashboards %}
-    <div class="dashboard-wrapper" data-position="{{dashboard.pk}}">
-        <div class="dashboard-name">
-            <a href="{% url 'dashboard' dashboard.pk %}">{{dashboard.name}}</a> 
-            <div class="dashboard-update-wrapper">
-                <button type="button" class="btn btn-link text-decoration-none text-reset p-0 m-1" data-bs-toggle="modal" data-bs-target="#dashboardUpdate{{dashboard.pk}}">
-                    <span class="material-icons">edit</span>
-                </button>
-                <div class="modal fade" id="dashboardUpdate{{dashboard.pk}}" tabindex="-1" aria-labelledby="modalForm" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Modal title</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="header-bar mb-4">
+    <div>
+        <h3 style="margin:0">You have {{count}} dashboard{{ count|pluralize:"s" }}</h3>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div id="dashboardlist" class="dashboard-items-wrapper align-items-stretch row row-cols-1 row-cols-md-4 g-5">
+        {% for dashboard in dashboards %}
+        <div class="col d-flex">
+            <div class="card border-light dashboard-wrapper flex-fill" data-position="{{dashboard.pk}}">
+                <div class="card-body pb-0 pt-1 pl-3 pr-2 d-flex inline-flex">
+                    <div class="dashboard-name card-title mt-1 mb-0"> 
+                        <a class="text-decoration-none text-reset" href="{% url 'dashboard' dashboard.pk %}">{{dashboard.name}}</a>
+                    </div>   
+                    <div>
+                        <button type="button" class="btn btn-link text-decoration-none text-reset p-0 m-1" data-bs-toggle="modal" data-bs-target="#dashboardUpdate{{dashboard.pk}}">
+                            <span class="material-icons">edit</span>
+                        </button>
+                        <div class="modal fade" id="dashboardUpdate{{dashboard.pk}}" tabindex="-1" aria-labelledby="modalForm" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Modal title</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="POST" action="{% url 'dashboard-update' dashboard.pk %}">
+                                            {% csrf_token %}
+                                            <p>
+                                                <label for="id_name">Name:</label>
+                                                <input type="text" name="name" value="{{dashboard.name}}" maxlength="50" required="" id="id_name">
+                                            </p>
+                                            <p>
+                                                <label for="id_default_dashboard">Default dashboard:</label>
+                                                <input type="checkbox" name="default_dashboard" id="id_default_dashboard" {% if dashboard.default_dashboard %} checked="" {% endif %}>                                        
+                                            </p>
+                                            <p>
+                                                <label for="id_balance">Balance:</label>
+                                                <input type="checkbox" name="balance" id="id_balance" {% if dashboard.balance %} checked="" {% endif %}>                                                                              
+                                            </p>
+                                            <p>
+                                                <label for="id_balance_time">Balance time:</label>
+                                                <input type="checkbox" name="balance_time" id="id_balance_time" {% if dashboard.balance_time %} checked="" {% endif %}>   
+                                            </p>
+                                            <p>
+                                                <label for="id_fst_lst_transaction">Fst lst transaction:</label>
+                                                <input type="checkbox" name="fst_lst_transaction" id="id_fst_lst_transaction" {% if dashboard.fst_lst_transaction %} checked="" {% endif %}>  
+                                            </p>
+                                            <p>
+                                                <label for="id_transactions">Transactions:</label>
+                                                <input type="checkbox" name="transactions" id="id_transactions" {% if dashboard.transactions %} checked="" {% endif %}>                                                                               
+                                            </p>
+                                            <p>
+                                                <label for="id_transactions_stats">Transactions stats:</label>
+                                                <input type="checkbox" name="transactions_stats" id="id_transactions_stats" {% if dashboard.transactions_stats %} checked="" {% endif %}>                                        
+                                            </p>
+                                            <p>
+                                                <label for="id_related_addresses">Related addresses:</label>
+                                                <input type="checkbox" name="related_addresses" id="id_related_addresses" {% if dashboard.related_addresses %} checked="" {% endif %}>                                       
+                                            </p>
+                                            <p>
+                                                <label for="id_illegal_activity">Illegal activity:</label>
+                                                <input type="checkbox" name="illegal_activity" id="id_illegal_activity" {% if dashboard.illegal_activity %} checked="" {% endif %}>                                       
+                                            </p>
+                                            <p>
+                                                <label for="id_web_appearances">Web appereances:</label>
+                                                <input type="checkbox" name="web_appearances" id="id_web_appearances" {% if dashboard.web_appearances %} checked="" {% endif %}>                                       
+                                            </p>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-primary">Save changes</button>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="modal-body">
-                                <form method="POST" action="{% url 'dashboard-update' dashboard.pk %}">
-                                    {% csrf_token %}
-                                    <p>
-                                        <label for="id_name">Name:</label>
-                                        <input type="text" name="name" value="{{dashboard.name}}" maxlength="50" required="" id="id_name">
-                                    </p>
-                                    <p>
-                                        <label for="id_default_dashboard">Default dashboard:</label>
-                                        <input type="checkbox" name="default_dashboard" id="id_default_dashboard" {% if dashboard.default_dashboard %} checked="" {% endif %}>                                        
-                                    </p>
-                                    <p>
-                                        <label for="id_balance">Balance:</label>
-                                        <input type="checkbox" name="balance" id="id_balance" {% if dashboard.balance %} checked="" {% endif %}>                                                                              
-                                    </p>
-                                    <p>
-                                        <label for="id_balance_time">Balance time:</label>
-                                        <input type="checkbox" name="balance_time" id="id_balance_time" {% if dashboard.balance_time %} checked="" {% endif %}>   
-                                    </p>
-                                    <p>
-                                        <label for="id_fst_lst_transaction">Fst lst transaction:</label>
-                                        <input type="checkbox" name="fst_lst_transaction" id="id_fst_lst_transaction" {% if dashboard.fst_lst_transaction %} checked="" {% endif %}>  
-                                    </p>
-                                    <p>
-                                        <label for="id_transactions">Transactions:</label>
-                                        <input type="checkbox" name="transactions" id="id_transactions" {% if dashboard.transactions %} checked="" {% endif %}>                                                                               
-                                    </p>
-                                    <p>
-                                        <label for="id_transactions_stats">Transactions stats:</label>
-                                        <input type="checkbox" name="transactions_stats" id="id_transactions_stats" {% if dashboard.transactions_stats %} checked="" {% endif %}>                                        
-                                    </p>
-                                    <p>
-                                        <label for="id_related_addresses">Related addresses:</label>
-                                        <input type="checkbox" name="related_addresses" id="id_related_addresses" {% if dashboard.related_addresses %} checked="" {% endif %}>                                       
-                                    </p>
-                                    <p>
-                                        <label for="id_illegal_activity">Illegal activity:</label>
-                                        <input type="checkbox" name="illegal_activity" id="id_illegal_activity" {% if dashboard.illegal_activity %} checked="" {% endif %}>                                       
-                                    </p>
-                                    <p>
-                                        <label for="id_web_appearances">Web appereances:</label>
-                                        <input type="checkbox" name="web_appearances" id="id_web_appearances" {% if dashboard.web_appearances %} checked="" {% endif %}>                                       
-                                    </p>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Save changes</button>
-                                </form>
-                            </div>
-                            <div class="modal-footer">
-                            </div>
-                        </div>
+                        </div>   
                     </div>
                 </div>
+                <a href="{% url 'dashboard' dashboard.pk %}">
+                    <img src="{% static 'images/dash-' %}{{forloop.counter0|modulo:10}}.png" style="width:100%" class="card-img-bottom img-rounded img-responsive overflow-hidden" alt="...">
+                </a>
             </div>
         </div>
-
+        {% empty %}
+        <div style="text-align: center; padding-bottom: 10px; line-height: 1em;">
+            <h3>No new dashboards are created.</h3>
+            <h3>Create a <a href="#">New dashboard</a> ! </h3>
+        </div>
+        {% endfor %}
+        {% if dashboards|length > 0 %}
+        <div class="col d-flex">
+            <div class="card card-block d-flex flex-grow">
+                <div class="card-body align-items-center d-flex px-0 py-0 flex-grow">
+                    <button type="button" class="btn btn-link text-decoration-none text-reset py-0 flex-grow" data-bs-toggle="modal" data-bs-target="#dashboardCreateModal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                    </button>
+                </div>    
+            </div> 
+        </div>
+        {% endif %}
     </div>
-
-
-    {% empty %}
-    <div style="text-align: center; padding-bottom: 10px; line-height: 1em;">
-        <h3>No new dashboards are created.</h3>
-        <h3>Create a <a href="#">New dashboard</a> ! </h3>
-    </div>
-    {% endfor %}
-    {% if dashboards|length > 0 %}
-    {% comment %} <a id="add-link" class="text-decoration-none text-reset" href="{% url 'dashboard-create' %}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-        </svg>
-    </a> {% endcomment %}
-    <button type="button" class="btn btn-link text-decoration-none text-reset p-0 m-1" data-bs-toggle="modal" data-bs-target="#dashboardCreateModal">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-        </svg>
-    </button>
-    {% endif %}
 </div>
 
 <div class="modal fade" id="dashboardCreateModal" tabindex="-1" aria-labelledby="modalForm" aria-hidden="true">

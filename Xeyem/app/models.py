@@ -75,6 +75,9 @@ class Dashboard(models.Model):
             Dashboard.objects.filter(
                 default_dashboard=True).update(default_dashboard=False)
             return super(Dashboard, self).save(*args, **kwargs)
+        
+    def get_functionalities(self):
+        return [key for key, value in self.__dict__.items() if value == True and key not in ['id', 'user_id', 'name', 'default_dashboard']]
     
 class Search(models.Model):
     user_id         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

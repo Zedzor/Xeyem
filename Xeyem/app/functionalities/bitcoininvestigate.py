@@ -141,7 +141,7 @@ def get_labels(addresses: list) -> dict:
             steps += 1 # Avoid infinite loop
             proxy = __get_different_proxy(proxy_list)
             proxy_list.append(proxy)
-            response = requests.get(url, headers=headers, proxies={'http': proxy})
+            response = get(url, headers=headers, proxies={'http': proxy})
             if response.ok:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 div = soup.find('div', {'class': 'walletnote'})
@@ -149,9 +149,7 @@ def get_labels(addresses: list) -> dict:
                     label = div.find('a')['href'].split('/')[-1]
                     labels[address] = label
                 elif steps > 5:
-                    labels[address] = None      
-        print(f'Address: {address} - Label: {label}')
-            
+                    labels[address] = None                  
     return labels
 
 def get_common_info(address: str) -> dict:
@@ -200,37 +198,36 @@ def fst_lst_transaction(info: dict) -> dict:
 def balance_time(address: str) -> dict:
     url = f'https://bitinfocharts.com/bitcoin/address/{address}'
     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
-    plt_div = ''
+    plt_div = None
     
     res = get(url=url, headers=headers)
     if res.ok:
         soup = BeautifulSoup(res.text, 'html.parser')
         scripts = soup.find_all('script')
+        search_text = 'd = new Dygraph(document.getElementById("gcontainer")'
         for script in scripts:
-            if 'd = new Dygraph(document.getElementById("gcontainer")' in script.text:
-                StrList = script.text
+            if script.string is not None and search_text in script.string:
+                StrList = script.string
                 StrList = '[[' + StrList.split('[[')[-1]
                 StrList = StrList.split(']]')[0] +']]'
                 StrList = StrList.replace("new Date(", '').replace(')','')
                 StrList = StrList[1:-1]
                 dataList = __parse_strlist(StrList)
-                df = pd.DataFrame(dataList, columns=['Date','Balance', 'USD', 'Other'])
+                df = pd.DataFrame(dataList, columns=['Date','Balance (BTC)', 'USD', 'Other'])
                 df['Date'] = pd.to_datetime(df['Date'], unit='ms')
-                df['Balance'] = pd.to_numeric(df['Balance'], errors='coerce')
+                df['Balance (BTC)'] = pd.to_numeric(df['Balance (BTC)'], errors='coerce')
                 df.drop(['USD','Other'], axis=1, inplace=True)
-                fig = px.line(data_frame=df, x='Date', y='Balance')
+                fig = px.line(data_frame=df, x='Date', y='Balance (BTC)')
                 plt_div = fig.to_html(include_plotlyjs=False, full_html=False, div_id="plt_div")
-                
-    if not plt_div:
+
+    if plt_div is None:
         plt_div = "Couldn't get balance through time"
     
     return {'balance_time': plt_div}
 
 def transactions(info: dict) -> dict:
-    print(info.values())
     if info is not None:
         txs = info['txs']
-        print(f'Number of transactions: {len(txs)}')
         transactions = []
         for tx in txs:
             inputs = []

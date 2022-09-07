@@ -6,12 +6,16 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
-
-from .models import Dashboard, Search
-from .forms import UserCreationForm
-
+from django.views.generic.edit import FormMixin
+from django.http import Http404
 from django.contrib.auth import login
 from django.urls import reverse_lazy
+
+from .functionalities.funcs import execute_search
+from .models import Dashboard, Search
+from .forms import ExecuteSearchForm, UserCreationForm
+
+
 
 # Create your views here.
 
@@ -54,25 +58,40 @@ class DashboardList(ListView):
             context['count'] = context['dashboards'].count()
             context['form'] = DashboardCreate.get_form_class(DashboardCreate)
             context['form_update'] = DashboardUpdate.get_form_class(DashboardUpdate)
-            
-            search_input = self.request.GET.get('search-area') or ''
-            if search_input:
-                context['dashboards'] = context['dashboards'].filter(
-                    title__contains=search_input)
-            context['search_input'] = search_input
-            
-            context['default_dashboard'] = context['dashboards'].filter(default_dashboard=True)
+            context['default_dashboard'] = context['dashboards'].get(default_dashboard=True).pk
+            # search_input = self.request.GET.get('search-area') or ''
+            # if search_input:
+            #     context['dashboards'] = context['dashboards'].filter(
+            #         title__contains=search_input)
+            # context['search_input'] = search_input
 
         return context
 
-class DashboardDetail(LoginRequiredMixin, DetailView):
+class DashboardDetail(LoginRequiredMixin, FormMixin, DetailView):
     model = Dashboard
     context_object_name = 'dashboard'
     template_name = 'app/dashboard.html'
+    form_class = ExecuteSearchForm
     
     def get_queryset(self):
         qs = super(DashboardDetail, self).get_queryset().filter(user_id=self.request.user)
         return qs
+    
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        dashboard = Dashboard.objects.get(id=self.kwargs['pk'])
+        address = self.request.POST.get('address')
+        if address:
+            functionalities = dashboard.get_functionalities()
+            try:
+                print(functionalities)
+                results = execute_search(address, functionalities)
+                context = self.get_context_data(**kwargs)
+                context['results'] = results
+                return render(request, 'app/dashboard.html', context)
+            except Http404:
+                raise
+            
     
 class DashboardCreate(LoginRequiredMixin, CreateView):
     model = Dashboard
