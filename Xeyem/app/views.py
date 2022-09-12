@@ -84,7 +84,6 @@ class DashboardDetail(LoginRequiredMixin, FormMixin, DetailView):
         if address:
             functionalities = dashboard.get_functionalities()
             try:
-                print(functionalities)
                 results = execute_search(address, functionalities)
                 context = self.get_context_data(**kwargs)
                 context['results'] = results

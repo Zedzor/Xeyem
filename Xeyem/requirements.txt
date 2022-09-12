@@ -3,3 +3,4 @@ free-proxy
 pandas
 plotly
 google
+django-extensions

@@ -13,14 +13,293 @@
     </form>
 </div>
 
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{dashboard.name}} results</h1>
+    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
+</div>
 
-<h3> {{dashboard.name}} Results</h3>
 
 {% if results %}
-<!-- Create a grid and put each result in a toggable card -->
-<div class="row">
-    {% for key,value in results.items %}
-    {{value}}
+<div class="container-fluid">
+    {% if results.balance or results.first_transaction or results.last_transaction or results.illegal_activity %}
+    <!-- Content Row -->
+    <div class="row">
+        {% if results.balance %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 border-start border-success border-4  shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="small fw-bold text-success text-uppercase mb-1">
+                                Balance</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.balance}} BTC</div>
+                        </div>
+                        <div class="col-auto">                       
+                            <i class="fas fa-brands fa-btc fa-2x" style="color:#dee2e6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if results.first_transaction %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 border-start border-info border-4  shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="small fw-bold text-info text-uppercase mb-1">
+                                First Transaction</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.first_transaction}}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-regular fa-calendar fa-2x" style="color:#dee2e6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if results.last_transaction %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 border-start border-info border-4  shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="small fw-bold text-info text-uppercase mb-1">
+                                Last Transaction</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.last_transaction}}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-regular fa-calendar fa-2x" style="color:#dee2e6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if results.illegal_activity %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 border-start border-warning border-4  shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="small fw-bold text-warning text-uppercase mb-1">
+                                Illegal Activity</div>
+                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.illegal_activity}}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-solid fa-skull-crossbones fa-2x" style="color:#dee2e6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    
+    {% if results.balance_time %}
+    <div class="card shadow mb-4">
+        <!-- Card Header -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 small fw-bold text-primary">Balance Through Time</h6>
+            {% comment %} <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Dropdown Header:</div>
+                    <a class="dropdown-item" href="#">Action</a>
+                    <a class="dropdown-item" href="#">Another action</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                </div>
+            </div> {% endcomment %}
+        </div>
+        <!-- Card Body -->
+        <div class="card-body">
+            {{results.balance_time|safe}}
+            {% comment %} <div class="chart-area"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                <canvas id="myAreaChart" style="display: block; width: 1049px; height: 320px;" class="chartjs-render-monitor" width="1049" height="320"></canvas>
+            </div> {% endcomment %}
+        </div>
+    </div>
+    {% endif %}
+    {% if results.inputs_stats %}
+    <div class="row">
+
+        <!-- Inputs Column -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 small font-weight-bold text-primary">Inputs Stats</h6>
+                    {% comment %} <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Dropdown Header:</div>
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </div> {% endcomment %}
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    {{results.inputs_stats|safe}}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 small font-weight-bold text-primary">Outputs Stats</h6>
+                    {% comment %} <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Dropdown Header:</div>
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </div> {% endcomment %}
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    {{results.outputs_stats|safe}}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if results.web_appearances or results.related_addresses %}
+    <!-- Content Row -->
+    <div class="row">
+        {% if results.web_appearances %}
+        <!-- Content Column -->
+        <div class="col-lg-6 mb-4">
+
+            <!-- Project Card Example -->
+            <div class="card shadow mb-4 h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 small fw-bold text-primary">Web appearances</h6>
+                </div>
+                <div class="card-body">
+                    <div class="overflow-auto">
+                        {% for url in results.web_appearances %}
+                        <div>
+                            <a class="h5 small fw-bold" href="{{url}}">{{url}}</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+        {% if results.addresses %}
+        <!-- Content Column -->
+        <div class="col-lg-6 mb-4">
+
+            <!-- Illustrations -->
+            <div class="card shadow mb-4 h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 small fw-bold text-primary">Related Addresses</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center overflow-auto">
+                        {% for address in results.addresses %}
+                        <h5 class="small fw-bold">{{address}}</a>
+                        {% endfor %}
+                    </div>    
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if results.transactions %}
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Content Column -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 small fw-bold text-primary">Transactions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <div class="table-responsive-sm">
+                            <table id="dataTable" class="table small table-striped table-sm" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                    <th class="th-sm">Hash
+                                    </th>
+                                    <th class="th-lg">Date
+                                    </th>
+                                    <th class="th-sm">Sent or Received
+                                    </th>
+                                    <th class="th-sm">Inputs
+                                    </th>
+                                    <th class="th-sm">Outputs
+                                    </th>
+                                    <th class="th-sm">Value
+                                    </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in results.transactions %}
+                                    <tr>
+                                        <td><a href="https://www.blockchain.com/btc/tx/{{transaction.hash}}">{{transaction.hash}}</a></td>
+                                        <td>{{transaction.date}}</td>
+                                        <td>{% if transaction.is_input %} Sent {% else %} Received {% endif %}</td>
+                                        <td>{{transaction.inputs.0.address}}</td>
+                                        <td>{{transaction.outputs.0.address}}</td>
+                                        <td>{{transaction.value}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>Hash
+                                        </th>
+                                        <th>Date
+                                        </th>
+                                        <th>Sent or Received
+                                        </th>
+                                        <th>Inputs
+                                        </th>
+                                        <th>Outputs
+                                        </th>
+                                        <th>Value
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+
+    {% comment %} {% for key,value in results.items %}
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -34,18 +313,15 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h5>Balance</h5>
-                            <p>{{value}}</p>
+                            <p>{{value|safe}}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    {% endfor %}
+    {% endfor %} {% endcomment %}
 </div>
-
-{{results.balance_time|safe}}
 {% else %}
 <div class="position-absolute top-50 start-50 translate-middle fs-1"> 
     <center> 
@@ -55,5 +331,309 @@
     </center>
 </div>
 {% endif %}
+<script>
+
+    $(document).ready(function () {
+        $("#dataTable").DataTable();
+   });
+</script>
 {% endblock content %}
 
+{% block css %}
+<script src="https://kit.fontawesome.com/939d4c3ab9.js" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+<link href="css/sb-admin-2.min.css" rel="stylesheet">
+<style type="text/css">/* Chart.js */
+    @keyframes chartjs-render-animation{from{opacity:.99}to{opacity:1}}.chartjs-render-monitor{animation:chartjs-render-animation 1ms}.chartjs-size-monitor,.chartjs-size-monitor-expand,.chartjs-size-monitor-shrink{position:absolute;direction:ltr;left:0;top:0;right:0;bottom:0;overflow:hidden;pointer-events:none;visibility:hidden;z-index:-1}.chartjs-size-monitor-expand>div{position:absolute;width:1000000px;height:1000000px;left:0;top:0}.chartjs-size-monitor-shrink>div{position:absolute;width:200%;height:200%;left:0;top:0}
+</style>
+
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.2.0/css/bootstrap.min.css">
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
+{% endblock css %}
+
+
+{% comment %} 
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+
+                    
+
+                    <!-- Content Row -->
+
+                    <div class="row">
+
+                        <!-- Area Chart -->
+                        <div class="col-xl-8 col-lg-7">
+                            <div class="card shadow mb-4">
+                                <!-- Card Header - Dropdown -->
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
+                                    <div class="dropdown no-arrow">
+                                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                                            <div class="dropdown-header">Dropdown Header:</div>
+                                            <a class="dropdown-item" href="#">Action</a>
+                                            <a class="dropdown-item" href="#">Another action</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#">Something else here</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Card Body -->
+                                <div class="card-body">
+                                    <div class="chart-area"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                        <canvas id="myAreaChart" style="display: block; width: 1049px; height: 320px;" class="chartjs-render-monitor" width="1049" height="320"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pie Chart -->
+                        <div class="col-xl-4 col-lg-5">
+                            <div class="card shadow mb-4">
+                                <!-- Card Header - Dropdown -->
+                                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
+                                    <div class="dropdown no-arrow">
+                                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                                            <div class="dropdown-header">Dropdown Header:</div>
+                                            <a class="dropdown-item" href="#">Action</a>
+                                            <a class="dropdown-item" href="#">Another action</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#">Something else here</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Card Body -->
+                                <div class="card-body">
+                                    <div class="chart-pie pt-4 pb-2"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                                        <canvas id="myPieChart" style="display: block; width: 491px; height: 245px;" class="chartjs-render-monitor" width="491" height="245"></canvas>
+                                    </div>
+                                    <div class="mt-4 text-center small">
+                                        <span class="mr-2">
+                                            <i class="fas fa-circle text-primary"></i> Direct
+                                        </span>
+                                        <span class="mr-2">
+                                            <i class="fas fa-circle text-success"></i> Social
+                                        </span>
+                                        <span class="mr-2">
+                                            <i class="fas fa-circle text-info"></i> Referral
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Row -->
+                    <div class="row">
+
+                        <!-- Content Column -->
+                        <div class="col-lg-6 mb-4">
+
+                            <!-- Project Card Example -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+                                </div>
+                                <div class="card-body">
+                                    <h4 class="small font-weight-bold">Server Migration <span class="float-right">20%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <h4 class="small font-weight-bold">Sales Tracking <span class="float-right">40%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <h4 class="small font-weight-bold">Customer Database <span class="float-right">60%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <h4 class="small font-weight-bold">Payout Details <span class="float-right">80%</span></h4>
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 80%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <h4 class="small font-weight-bold">Account Setup <span class="float-right">Complete!</span></h4>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Color System -->
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-primary text-white shadow">
+                                        <div class="card-body">
+                                            Primary
+                                            <div class="text-white-50 small">#4e73df</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-success text-white shadow">
+                                        <div class="card-body">
+                                            Success
+                                            <div class="text-white-50 small">#1cc88a</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-info text-white shadow">
+                                        <div class="card-body">
+                                            Info
+                                            <div class="text-white-50 small">#36b9cc</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-warning text-white shadow">
+                                        <div class="card-body">
+                                            Warning
+                                            <div class="text-white-50 small">#f6c23e</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-danger text-white shadow">
+                                        <div class="card-body">
+                                            Danger
+                                            <div class="text-white-50 small">#e74a3b</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-secondary text-white shadow">
+                                        <div class="card-body">
+                                            Secondary
+                                            <div class="text-white-50 small">#858796</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-light text-black shadow">
+                                        <div class="card-body">
+                                            Light
+                                            <div class="text-black-50 small">#f8f9fc</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card bg-dark text-white shadow">
+                                        <div class="card-body">
+                                            Dark
+                                            <div class="text-white-50 small">#5a5c69</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+
+                            <!-- Illustrations -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Illustrations</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;" src="img/undraw_posting_photo.svg" alt="...">
+                                    </div>
+                                    <p>Add some quality, svg illustrations to your project courtesy of <a target="_blank" rel="nofollow" href="https://undraw.co/">unDraw</a>, a
+                                        constantly updated collection of beautiful svg images that you can use
+                                        completely free and without attribution!</p>
+                                    <a target="_blank" rel="nofollow" href="https://undraw.co/">Browse Illustrations on
+                                        unDraw →</a>
+                                </div>
+                            </div>
+
+                            <!-- Approach -->
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>SB Admin 2 makes extensive use of Bootstrap 4 utility classes in order to reduce
+                                        CSS bloat and poor page performance. Custom CSS classes are used to create
+                                        custom components and custom utility classes.</p>
+                                    <p class="mb-0">Before working with this theme, you should become familiar with the
+                                        Bootstrap framework, especially the utility classes.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+            <!-- Footer -->
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>Copyright © Your Website 2021</span>
+                    </div>
+                </div>
+            </footer>
+            <!-- End of Footer -->
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top" style="display: none;">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Logout Modal-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="login.html">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="vendor/chart.js/Chart.min.js"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="js/demo/chart-area-demo.js"></script>
+    <script src="js/demo/chart-pie-demo.js"></script> {% endcomment %}

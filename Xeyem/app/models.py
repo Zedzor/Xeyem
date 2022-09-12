@@ -1,3 +1,4 @@
+from operator import mod
 from django.db import models, transaction
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
@@ -85,3 +86,8 @@ class Search(models.Model):
     search_date     = models.DateTimeField(auto_now=True)
     notes           = models.TextField(max_length=500, null=True ,blank=True)
     
+class Entity(models.Model):
+    address = models.CharField(max_length=100, primary_key=True)
+    address_name = models.CharField(max_length=100, null=False)
+    address_tag = models.CharField(max_length=100, null=False)
+    address_country = models.CharField(max_length=40, null=True)

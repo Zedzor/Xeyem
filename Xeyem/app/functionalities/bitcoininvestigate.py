@@ -12,6 +12,7 @@ from fp.fp import FreeProxy
 from googlesearch import search
 from datetime import datetime
 from io import StringIO
+from ..models import Entity
 
 
 BITCOINABUSE_API_TOKEN = 'xpq3nxlgXOcyafM6QaBCXCu3oKjArNT9Q2bZfzIX'
@@ -128,29 +129,37 @@ def __get_report_from_bitcoinabuse(address: str) -> str:
 
 
 
-def get_labels(addresses: list) -> dict:
-    """Gets the label from walletexplorer.com for the given address"""
-    labels = {}
-    proxy_list = []
-    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
-    for address in addresses:
-        url = f'https://www.walletexplorer.com/address/{address}'
-        div = label = None
-        steps = 0
-        while div is None or steps > 5:
-            steps += 1 # Avoid infinite loop
-            proxy = __get_different_proxy(proxy_list)
-            proxy_list.append(proxy)
-            response = get(url, headers=headers, proxies={'http': proxy})
-            if response.ok:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                div = soup.find('div', {'class': 'walletnote'})
-                if div is not None:
-                    label = div.find('a')['href'].split('/')[-1]
-                    labels[address] = label
-                elif steps > 5:
-                    labels[address] = None                  
-    return labels
+# def get_labels(addresses: list) -> dict:
+#     """Gets the label from walletexplorer.com for the given address"""
+#     labels = {}
+#     proxy_list = []
+#     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
+#     for address in addresses:
+#         url = f'https://www.walletexplorer.com/address/{address}'
+#         div = label = None
+#         steps = 0
+#         while div is None or steps > 5:
+#             steps += 1 # Avoid infinite loop
+#             proxy = __get_different_proxy(proxy_list)
+#             proxy_list.append(proxy)
+#             response = get(url, headers=headers, proxies={'http': proxy})
+#             if response.ok:
+#                 soup = BeautifulSoup(response.text, 'html.parser')
+#                 div = soup.find('div', {'class': 'walletnote'})
+#                 if div is not None:
+#                     label = div.find('a')['href'].split('/')[-1]
+#                     labels[address] = label
+#                 elif steps > 5:
+#                     labels[address] = None                  
+#     return labels
+
+def __get_address_label(address: str) -> str:
+    label = Entity.objects.filter(address=address)
+    if label.exists():
+        label = label.first().address_tag
+    else:
+        label = 'Other'
+    return label
 
 def get_common_info(address: str) -> dict:
     res = get(f'https://blockchain.info/rawaddr/{address}')
@@ -217,7 +226,7 @@ def balance_time(address: str) -> dict:
                 df['Date'] = pd.to_datetime(df['Date'], unit='ms')
                 df['Balance (BTC)'] = pd.to_numeric(df['Balance (BTC)'], errors='coerce')
                 df.drop(['USD','Other'], axis=1, inplace=True)
-                fig = px.line(data_frame=df, x='Date', y='Balance (BTC)')
+                fig = px.area(data_frame=df, x='Date', y='Balance (BTC)')
                 plt_div = fig.to_html(include_plotlyjs=False, full_html=False, div_id="plt_div")
 
     if plt_div is None:
@@ -244,7 +253,7 @@ def transactions(info: dict) -> dict:
                 })
             custom_tx = {
                 'hash' : tx['hash'],
-                'date' : datetime.fromtimestamp(tx['time']),
+                'date' : datetime.fromtimestamp(tx['time']).strftime("%Y-%m-%d %H:%M:%S"),
                 'inputs': inputs,
                 'outputs': outputs,
                 'is_input': tx['result'] < 0,
@@ -258,7 +267,7 @@ def transactions(info: dict) -> dict:
         'transactions': transactions,
     }
 
-def transaction_stats(info: dict) -> dict:
+def transactions_stats(info: dict) -> dict:
     if info is not None:
         addresses = __get_address_list(info)
         all_addresses = list(set(addresses['inputs'] + addresses['outputs']))
@@ -266,26 +275,55 @@ def transaction_stats(info: dict) -> dict:
         addresses_dict = {}
         # label each address using walletexplorer and bitcoinabuse
         for address in all_addresses:
-            proxy = __get_different_proxy(proxy_list)
-            proxy_list += proxy
-            label = __get_address_label(address, proxy)
+            label = __get_address_label(address)
             addresses_dict[address] = label
         # get how many times a label appears in the inputs
-        labels = {}
+        labels = {
+            'inputs': {},
+            'outputs': {},
+        }
         for address in addresses['inputs']:
             label = addresses_dict[address]
-            if label in labels:
-                labels[label] += 1
+            if label in labels['inputs']:
+                labels['inputs'][label] += 1
             else:
-                labels[label] = 1
+                labels['inputs'][label] = 1
         # get how many times a label appears in the outputs
         for address in addresses['outputs']:
             label = addresses_dict[address]
-            if label in labels:
-                labels[label] += 1
+            if label in labels['outputs']:
+                labels['outputs'][label] += 1
             else:
-                labels[label] = 1
+                labels['outputs'][label] = 1
         # get the label stats for the inputs
+        inputs = []
+        for label in labels['inputs']:
+            inputs.append({
+                'label': label,
+                'count': labels['inputs'][label],
+            })
+        # get the label stats for the outputs
+        outputs = []
+        for label in labels['outputs']:
+            outputs.append({
+                'label': label,
+                'count': labels['outputs'][label],
+            })
+        # plot the input stats on a pie chart using plotly
+        fig = px.pie(data_frame=pd.DataFrame(inputs), names='label', values='count')
+        fig = fig.update_traces(textposition='inside', textinfo='percent+label')
+        inputs_div = fig.to_html(include_plotlyjs=False, full_html=False, div_id="inputs_div")
+        # plot the output stats on a pie chart using plotly
+        fig2 = px.pie(data_frame=pd.DataFrame(outputs), names='label', values='count')
+        fig2=fig2.update_traces(textposition='inside', textinfo='percent+label')
+        outputs_div = fig2.to_html(include_plotlyjs=False, full_html=False, div_id="outputs_div")
+    else:
+        inputs_div = outputs_div = "Error al obtener estadísticas de transacciones"
+
+    return {
+        'inputs_stats': inputs_div,
+        'outputs_stats': outputs_div,
+    }
         
             
 def related_addresses(address: str) -> dict: 

@@ -1,12 +1,72 @@
-<div class="header-bar">
-    <h1>Login</h1>
-</div>
-
-<div class="card-body">
+{% extends 'app/index.html' %} {% block content %}
+{% comment %} <div class="card-body">
     <form method="POST">
         {% csrf_token %}
         {{form.as_p}}
         <input class="button" type="submit" value="Login">
     </form>
     <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+</div> {% endcomment %}
+
+<div class="container-fluid ps-md-0">
+    <div class="row g-0">
+        <div class="d-none d-md-flex col-md-4 col-lg-6 bg-image"></div>
+            <div class="col-md-8 col-lg-6">
+                <div class="login d-flex align-items-center py-5">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-9 col-lg-8 mx-auto">
+                                <h3 class="login-heading mb-4">Welcome back!</h3>
+            
+                                <!-- Sign In Form -->
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    <div class="form-floating mb-3">
+                                        <input class="form-control" placeholder="name@example.com" type="text" name="username" autofocus="" autocapitalize="none" autocomplete="username" maxlength="254" required="" id="id_username">
+                                        <label for="id_username">Email address</label>
+                                    </div>
+                                    <div class="form-floating mb-3">
+                                        <input type="password" placeholder="Password" class="form-control" name="password" autocomplete="current-password" required="" id="id_password">
+                                        <label for="id_password">Password</label>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-lg btn-primary btn-login text-uppercase fw-bold mb-2" type="submit">Sign in</button>
+                                        <div class="text-center">
+                                            <p clas="small">Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+    
+{% endblock content %}
+
+{% block css %}
+<style>
+.login {
+    min-height: 100vh;
+  }
+  
+  .bg-image {
+    background-image: url('https://source.unsplash.com/WEQbe2jBg40/600x1200');
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .login-heading {
+    font-weight: 300;
+  }
+  
+  .btn-login {
+    font-size: 0.9rem;
+    letter-spacing: 0.05rem;
+    padding: 0.75rem 1rem;
+  }
+</style>
+{% endblock css %}
