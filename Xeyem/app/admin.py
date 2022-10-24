@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-from .models import Dashboard, Search
+from .models import Address, Dashboard, Entity, Note, Search, SuggestedTag, WebAppearance
 
 User = get_user_model()
 
@@ -30,3 +30,8 @@ class UserAdmin(DjangoUserAdmin):
     
 admin.site.register(Dashboard)
 admin.site.register(Search)
+admin.site.register(Entity)
+admin.site.register(Address)
+admin.site.register(Note)
+admin.site.register(WebAppearance)
+admin.site.register(SuggestedTag)

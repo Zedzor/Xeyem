@@ -1,4 +1,4 @@
-from app.models import Entity
+from app.models import Address, Entity
 import csv
 
 MATCHES = {
@@ -57,7 +57,6 @@ INFO = {
 'GreenRoadMarket': 'Darknet market',
 }
 
-
 def save_Exchanges():
     with open('app/EntitiesAddressesBTC/data/Exchanges_full_detailed.csv') as file:
         reader = csv.reader(file)
@@ -67,10 +66,15 @@ def save_Exchanges():
             address = row[5]
             name = row[4]
             tag = 'Exchange'
-            country = row[2]
+            # country = row[2]
 
-            entity = Entity(address=address, address_name=name, address_tag=tag, address_country=country)
-            entity.save()
+            # Check if entity already exists
+            if not Entity.objects.filter(entity_name=name).exists():
+                entity = Entity(entity_name=name, entity_tag=tag)
+                entity.save()
+            entity = Entity.objects.get(entity_name=name)
+            address = Address(entity_id=entity, address=address)
+            address.save()
 
 def save_Mining():
     with open('app/EntitiesAddressesBTC/data/Mining_full_detailed.csv') as file:
@@ -82,8 +86,12 @@ def save_Mining():
             name = row[2]
             tag = 'Mining'
 
-            entity = Entity(address=address, address_name=name, address_tag=tag)
-            entity.save()
+            if not Entity.objects.filter(entity_name=name).exists():
+                entity = Entity(entity_name=name, entity_tag=tag)
+                entity.save()
+            entity = Entity.objects.get(entity_name=name)
+            address = Address(entity_id=entity, address=address)
+            address.save()
 
 def save_Gambling():
     with open('app/EntitiesAddressesBTC/data/Gambling_full_detailed.csv') as file:
@@ -95,8 +103,12 @@ def save_Gambling():
             name = row[2]
             tag = 'Gambling'
 
-            entity = Entity(address=address, address_name=name, address_tag=tag)
-            entity.save()
+            if not Entity.objects.filter(entity_name=name).exists():
+                entity = Entity(entity_name=name, entity_tag=tag)
+                entity.save()
+            entity = Entity.objects.get(entity_name=name)
+            address = Address(entity_id=entity, address=address)
+            address.save()
 
 def identify_service(name: str) -> str:
     for key, value in INFO.items():
@@ -118,8 +130,12 @@ def save_Services():
             name = row[2]
             tag = identify_service(name)
 
-            entity = Entity(address=address, address_name=name, address_tag=tag)
-            entity.save()
+            if not Entity.objects.filter(entity_name=name).exists():
+                entity = Entity(entity_name=name, entity_tag=tag)
+                entity.save()
+            entity = Entity.objects.get(entity_name=name)
+            address = Address(entity_id=entity, address=address)
+            address.save()
 
 def save_Historic():
     with open('app/EntitiesAddressesBTC/data/Historic_full_detailed.csv') as file:
@@ -131,17 +147,26 @@ def save_Historic():
             name = row[2]
             tag = identify_service(name)
 
-            entity = Entity(address=address, address_name=name, address_tag=tag)
-            entity.save()
+            if not Entity.objects.filter(entity_name=name).exists():
+                entity = Entity(entity_name=name, entity_tag=tag)
+                entity.save()
+            entity = Entity.objects.get(entity_name=name)
+            address = Address(entity_id=entity, address=address)
+            address.save()
 
 def run():
-    Entity.objects.all().delete()
+    # Entity.objects.all().delete()
+    print('Saving Exchanges...')
     save_Exchanges()
+    print('Saving Mining...')
     save_Mining()
+    print('Saving Gambling...')
     save_Gambling()
+    print('Saving Services...')
     save_Services()
+    print('Saving Historic...')
     save_Historic()
 
 if __name__ == '__main__':
-    run()
+    pass
     

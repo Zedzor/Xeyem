@@ -74,7 +74,9 @@ class Dashboard(models.Model):
             return super(Dashboard, self).save(*args, **kwargs)
         with transaction.atomic():
             Dashboard.objects.filter(
-                default_dashboard=True).update(default_dashboard=False)
+                user_id=self.user_id, 
+                default_dashboard=True
+            ).update(default_dashboard=False)
             return super(Dashboard, self).save(*args, **kwargs)
         
     def get_functionalities(self):
@@ -84,10 +86,41 @@ class Search(models.Model):
     user_id         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     wallet_address  = models.CharField(max_length=100)
     search_date     = models.DateTimeField(auto_now=True)
-    notes           = models.TextField(max_length=500, null=True ,blank=True)
-    
+
+
 class Entity(models.Model):
-    address = models.CharField(max_length=100, primary_key=True)
-    address_name = models.CharField(max_length=100, null=False)
-    address_tag = models.CharField(max_length=100, null=False)
-    address_country = models.CharField(max_length=40, null=True)
+    entity_name     = models.CharField(max_length=100, null=True)
+    entity_tag      = models.CharField(max_length=100, null=False)
+
+class Address(models.Model):
+    entity_id         = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    address           = models.CharField(max_length=100, unique=True,null=False, blank=False)
+    last_search       = models.CharField(max_length=1073741824, null=True, blank=True)
+    first_transaction = models.CharField(max_length=200, null=True, blank=True)
+    informant         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['address']),
+        ]
+
+class WebAppearance(models.Model):
+    address         = models.ForeignKey(Address, to_field='address', on_delete=models.CASCADE)
+    web_address     = models.CharField(max_length=100, unique=True,null=False, blank=False)
+    informant       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['address']),
+        ]
+
+class SuggestedTag(models.Model):
+    wallet_id       = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    tag             = models.CharField(max_length=100, null=False)
+    informant       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
+
+class Note(models.Model):
+    user_id         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    wallet_address  = models.ForeignKey(Address, to_field='address', on_delete=models.CASCADE)
+    note            = models.TextField(max_length=5000, null=False ,blank=False)
+    date_posted     = models.DateTimeField(auto_now=True)

@@ -7,18 +7,19 @@ import pandas as pd
 import ssl
 from bs4 import BeautifulSoup
 import re
+import json
 import plotly.express as px
 from fp.fp import FreeProxy
 from googlesearch import search
 from datetime import datetime
 from io import StringIO
-from ..models import Entity
+from ..models import Entity, Address, WebAppearance, SuggestedTag, Note
 
 
 BITCOINABUSE_API_TOKEN = 'xpq3nxlgXOcyafM6QaBCXCu3oKjArNT9Q2bZfzIX'
 SATOSHI_DIVISOR = 100000000
 
-def __get_first_and_last_tx(address: str, n_tx: int) -> tuple:
+def __get_first_last_tx(address: str, n_tx: int, get_first: bool) -> tuple:
     url = f'https://www.walletexplorer.com/address/{address}'
     # To avoid certificate errors
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -28,15 +29,18 @@ def __get_first_and_last_tx(address: str, n_tx: int) -> tuple:
     # And finally we return the first row from the date column
     last_tx = df['date'].iloc[0]
     
-    # The first transaction is at the last row on the last page
-    # the amount of txs for page is 100
-    if n_tx > 100: # if there is only 1 page we already have it
-        page_n = ceil(n_tx / 100)
-        url += f'?page={page_n}'
+    if get_first:
+        # The first transaction is at the last row on the last page
+        # the amount of txs for page is 100
+        if n_tx > 100: # if there is only 1 page we already have it
+            page_n = ceil(n_tx / 100)
+            url += f'?page={page_n}'
 
-        df = pd.read_csv(url+'&format=csv', skiprows=[0])
+            df = pd.read_csv(url+'&format=csv', skiprows=[0])
 
-    first_tx = df['date'].iloc[-1]
+        first_tx = df['date'].iloc[-1]
+    else:
+        first_tx = None
         
     return (first_tx,last_tx)
 
@@ -76,6 +80,7 @@ def __get_wallets_from_walletexplorer():
     proxy = __get_different_proxy([])
     res = get(url=url, proxies={'http': proxy})
     if res.ok:
+        print(res.content)
         soup = BeautifulSoup(res.text, 'html.parser')
         table = soup.find('table', {'class': 'serviceslist'})
         table = table.tr 
@@ -94,7 +99,7 @@ def __get_wallets_from_walletexplorer():
         return None
 
 def __get_label_from_address(address: str) -> str:
-    proxy = FreeProxy(rand=True, elite=True).get()
+    proxy = FreeProxy(rand=True).get()
     url = f'https://www.walletexplorer.com/address/{address}'
     res = get(url=url, proxies={'http': proxy})
     if res.ok:
@@ -127,84 +132,131 @@ def __get_report_from_bitcoinabuse(address: str) -> str:
     
     return abuse
 
-
-
-# def get_labels(addresses: list) -> dict:
-#     """Gets the label from walletexplorer.com for the given address"""
-#     labels = {}
-#     proxy_list = []
-#     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
-#     for address in addresses:
-#         url = f'https://www.walletexplorer.com/address/{address}'
-#         div = label = None
-#         steps = 0
-#         while div is None or steps > 5:
-#             steps += 1 # Avoid infinite loop
-#             proxy = __get_different_proxy(proxy_list)
-#             proxy_list.append(proxy)
-#             response = get(url, headers=headers, proxies={'http': proxy})
-#             if response.ok:
-#                 soup = BeautifulSoup(response.text, 'html.parser')
-#                 div = soup.find('div', {'class': 'walletnote'})
-#                 if div is not None:
-#                     label = div.find('a')['href'].split('/')[-1]
-#                     labels[address] = label
-#                 elif steps > 5:
-#                     labels[address] = None                  
-#     return labels
-
-def __get_address_label(address: str) -> str:
-    label = Entity.objects.filter(address=address)
-    if label.exists():
-        label = label.first().address_tag
+def __get_tag_and_name(addr: str) -> tuple:
+    address = Address.objects.filter(address=addr).first()
+    if address is not None:
+        entity = address.entity_id
+        tag = entity.entity_tag
+        name = entity.entity_name if entity.entity_name is not None else ''
     else:
-        label = 'Other'
-    return label
+        tag = 'Other'
+        name = ''
+    return tag,name
+
+
+def __get_stored_info(addr: str) -> dict:
+    """Function to get the stored info for an address"""
+    address = Address.objects.filter(address=addr)
+    if address.exists():
+        entity = Entity.objects.filter(address=addr)
+        web_appearances = WebAppearance.objects.filter(address=addr)
+        suggested_tags  = SuggestedTag.objects.filter(address=addr)
+        notes = Note.objects.filter(address=addr)
+        last_search = json.loads(address.first().last_search) if last_search is not None else None
+        info = {
+            'address': addr,
+            'entity': entity.first().address_tag if entity.exists() else None,
+            'web_appearances': [ web_appearance.web_address for web_appearance in web_appearances ] if web_appearances.exists() else None,
+            'suggested_tags': [{
+                'suggested_tag': suggested_tag.tag,
+                'suggested_by': suggested_tag.informant.email if suggested_tag.informant else None,
+                } for suggested_tag in suggested_tags ] if suggested_tags.exists() else None,
+            'notes': [{
+                'note': note.note,
+                'created_by': note.informant.email if note.informant else None,
+                } for note in notes ] if notes.exists() else None,
+            'informed_by': address.first().informant.email if address.first().informant else None,
+        }
+        if last_search is not None:
+            info['balance'] = last_search['balance']
+            info['n_tx'] = last_search['n_tx']
+            info['total_received'] = last_search['total_received']
+            info['total_sent'] = last_search['total_sent']
+            info['txs'] = last_search['txs']
+            info['transactions'] = last_search['transactions']
+            info['first_transaction'] = last_search['first_transaction']
+            info['last_transaction'] = last_search['last_transaction']                        
+
+    else:
+        info = None
+
+    return info
+
+def __get_txs(address: str, json_response: dict) -> dict:
+    """Function to get the transactions of an address"""
+    # Total number of requests needed for getting all transactions
+    total_req = ceil(json_response['n_tx'] / 100)
+    # Number of requests to be executed (max 5 == 500 txs)
+    req_n = total_req if total_req < 5 else 5
+    for i in range(1, req_n):
+        res_ok = False
+        proxy_list = []
+        failed_count = 0
+        while not res_ok and failed_count < 5:
+            proxy = __get_different_proxy(proxy_list)
+            proxy_list += proxy
+            res = get(f'https://blockchain.info/rawaddr/{address}?offset={i*100}', proxies={'http': proxy})
+            if res.ok:
+                json_response['txs'] += res.json()['txs']
+                res_ok = True
+            else:
+                failed_count += 1
+    return json_response
 
 def get_common_info(address: str) -> dict:
+    stored_info = __get_stored_info(address)
     res = get(f'https://blockchain.info/rawaddr/{address}')
     if res.ok:
         json_response = res.json()
-        # Total number of requests needed for getting all transactions
-        total_req = ceil(json_response['n_tx'] / 100)
-        # Number of requests to be executed (max 5 == 500 txs)
-        req_n = total_req if total_req < 5 else 5
-        for i in range(1, req_n):
-            res_ok = False
-            proxy_list = []
-            failed_count = 0
-            while not res_ok and failed_count < 5:
-                proxy = __get_different_proxy(proxy_list)
-                proxy_list += proxy
-                res = get(f'https://blockchain.info/rawaddr/{address}?offset={i*100}', proxies={'http': proxy})
-                if res.ok:
-                    json_response['txs'] += res.json()['txs']
-                    res_ok = True
-                else:
-                    failed_count += 1
-        json_response['txs'].sort(key=lambda tx: tx['time'], reverse=True)
-        return json_response
-    else:
-        return None
+        #check if the total number of transactions is different from the stored one
+        if stored_info:
+            if len(stored_info['transactions']) != json_response['n_tx']:
+                json_response = __get_txs(address, json_response)
+                # Update list of transactions adding the new ones and removing duplicates
+                stored_info['transactions'] = list(set(stored_info['transactions'] + json_response['txs']))
+                # sort the list of transactions by time
+                stored_info['transactions'].sort(key=lambda tx: tx['time'], reverse=True)
+                stored_info['balance'] = json_response['final_balance']
+                stored_info['n_tx'] = json_response['n_tx']
+                stored_info['new_info'] = True
+            else:
+                stored_info['new_info'] = False
 
-def balance(info: dict) -> dict:   
-    final_balance = info['final_balance'] / SATOSHI_DIVISOR if info is not None else 'Error al obtener balance'
-    return {
+        else:
+            stored_info = __get_txs(address, json_response)
+            stored_info['new_info'] = True
+            stored_info['balance'] = stored_info.pop('final_balance')
+
+    return stored_info
+
+def balance(info: dict) -> tuple:  
+    final_balance = info['balance'] / SATOSHI_DIVISOR if info is not None else 'Error al obtener balance'
+    return info,{
         'balance': final_balance,
     }
     
-def fst_lst_transaction(info: dict) -> dict:
+def fst_lst_transaction(info: dict) -> tuple:
     if info is not None:
-        first_transaction,last_transaction = __get_first_and_last_tx(info['address'], info['n_tx'])
+        if not info['new_info']:
+            first_transaction = info['first_transaction']
+            last_transaction = info['last_transaction']
+        elif 'first_transaction' in info:
+            first_transaction = info['first_transaction']
+            info['last_transaction'] = last_transaction = __get_first_last_tx(info['address'], info['n_tx'], False)[1]
+        else:
+            first_transaction,last_transaction = __get_first_last_tx(info['address'], info['n_tx'], True)
+            info['first_transaction'] = first_transaction
+            info['last_transaction'] = last_transaction
     else:
         first_transaction = last_transaction = "Error al obtener fecha"
         
-    return {
+    return info,{
         'first_transaction': first_transaction,
         'last_transaction': last_transaction,
     }
     
-def balance_time(address: str) -> dict:
+def balance_time(info: dict) -> tuple:
+    address = info['address']
     url = f'https://bitinfocharts.com/bitcoin/address/{address}'
     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
     plt_div = None
@@ -232,65 +284,68 @@ def balance_time(address: str) -> dict:
     if plt_div is None:
         plt_div = "Couldn't get balance through time"
     
-    return {'balance_time': plt_div}
+    return info,{'balance_time': plt_div}
 
-def transactions(info: dict) -> dict:
+def transactions(info: dict) -> tuple:
     if info is not None:
-        txs = info['txs']
-        transactions = []
-        for tx in txs:
-            inputs = []
-            for inp in tx['inputs']:
-                inputs.append({
-                    'address': inp['prev_out']['addr'],
-                    'value': inp['prev_out']['value'] / SATOSHI_DIVISOR,
-                })
-            outputs = []
-            for out in tx['out']:
-                outputs.append({
-                    'address': out['addr'],
-                    'value': out['value'] / SATOSHI_DIVISOR,
-                })
-            custom_tx = {
-                'hash' : tx['hash'],
-                'date' : datetime.fromtimestamp(tx['time']).strftime("%Y-%m-%d %H:%M:%S"),
-                'inputs': inputs,
-                'outputs': outputs,
-                'is_input': tx['result'] < 0,
-                'value': tx['result'] / SATOSHI_DIVISOR,
-            }
-            transactions.append(custom_tx)       
+        if info['new_info']:
+            txs = info['txs']
+            transactions = []
+            for tx in txs:
+                inputs = []
+                for inp in tx['inputs']:
+                    inputs.append({
+                        'address': inp['prev_out']['addr'],
+                        'value': inp['prev_out']['value'] / SATOSHI_DIVISOR,
+                    })
+                outputs = []
+                for out in tx['out']:
+                    outputs.append({
+                        'address': out['addr'],
+                        'value': out['value'] / SATOSHI_DIVISOR,
+                    })
+                custom_tx = {
+                    'hash' : tx['hash'],
+                    'date' : datetime.fromtimestamp(tx['time']).strftime("%Y-%m-%d %H:%M:%S"),
+                    'inputs': inputs,
+                    'outputs': outputs,
+                    'is_input': tx['result'] < 0,
+                    'value': tx['result'] / SATOSHI_DIVISOR,
+                }
+                transactions.append(custom_tx)
+            info['transactions'] = transactions   
+        else:
+            transactions = info['transactions']
     else:
         transactions = 'Error al obtener transacciones'
-        
-    return {
-        'transactions': transactions,
-    }
 
-def transactions_stats(info: dict) -> dict:
+    return info,{'transactions': transactions,}
+
+def transactions_stats(info: dict) -> tuple:
     if info is not None:
         addresses = __get_address_list(info)
         all_addresses = list(set(addresses['inputs'] + addresses['outputs']))
-        proxy_list = []
         addresses_dict = {}
-        # label each address using walletexplorer and bitcoinabuse
         for address in all_addresses:
-            label = __get_address_label(address)
-            addresses_dict[address] = label
+            addresses_dict[address] = __get_tag_and_name(address)
         # get how many times a label appears in the inputs
         labels = {
             'inputs': {},
             'outputs': {},
         }
+        exchanges = []
+
         for address in addresses['inputs']:
-            label = addresses_dict[address]
+            label = addresses_dict[address][0]
             if label in labels['inputs']:
                 labels['inputs'][label] += 1
             else:
                 labels['inputs'][label] = 1
         # get how many times a label appears in the outputs
         for address in addresses['outputs']:
-            label = addresses_dict[address]
+            label = addresses_dict[address][0]
+            if label == 'Exchange':
+                exchanges.append(addresses_dict[address][1])
             if label in labels['outputs']:
                 labels['outputs'][label] += 1
             else:
@@ -317,66 +372,84 @@ def transactions_stats(info: dict) -> dict:
         fig2 = px.pie(data_frame=pd.DataFrame(outputs), names='label', values='count')
         fig2=fig2.update_traces(textposition='inside', textinfo='percent+label')
         outputs_div = fig2.to_html(include_plotlyjs=False, full_html=False, div_id="outputs_div")
+        exchanges = list(set(exchanges))
     else:
         inputs_div = outputs_div = "Error al obtener estadísticas de transacciones"
 
-    return {
+    return info,{
         'inputs_stats': inputs_div,
         'outputs_stats': outputs_div,
+        'exchanges': exchanges,
     }
         
             
-def related_addresses(address: str) -> dict: 
-    label = __get_label_from_address(address)
-    ssl._create_default_https_context = ssl._create_unverified_context
-    url = f'https://walletexplorer.com/wallet/{label}/addresses?format=csv'
-    proxy = FreeProxy(rand=True, elite=True).get()
-    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
-    res = get(url=url, headers=headers, proxies={'http': proxy})
-    if res.ok:
-        df = pd.read_csv(StringIO(res.text), skiprows=[0])
-        addresses = df['address'].to_list()
-        related = {
-            'addresses': addresses,
-        }
-        if len(addresses) == 100:
-                related['url'] = f'https://walletexplorer.com/wallet/{label}/addresses',
-    else:
-        related = {
-            'addresses': 'Error al obtener direcciones relacionadas.'
+def related_addresses(info: dict) -> tuple: 
+    address = Address.objects.filter(address=info['address'])
+    if address.exists():
+        related = [ addr.address for addr in address ]
+    else:    
+        address = info['address'] 
+        label = __get_label_from_address(address)
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = f'https://walletexplorer.com/wallet/{label}/addresses?format=csv'
+        proxy = FreeProxy(rand=True).get()
+        headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
+        res = get(url=url, headers=headers, proxies={'http': proxy})
+        if res.ok:
+            df = pd.read_csv(StringIO(res.text), skiprows=[0])
+            addresses = df['address'].to_list()
+            related = {
+                'addresses': addresses,
             }
+            if len(addresses) == 100:
+                    related['url'] = f'https://walletexplorer.com/wallet/{label}/addresses',
+        else:
+            related = {
+                'addresses': 'Error al obtener direcciones relacionadas.'
+                }
     
-    return related
+    return info,related
 
-    
-
-
-def illegal_activity(address: str) -> dict:
-    illegal_activity = None
-    label = __get_label_from_address(address)
-    # Exclude addresses with label 'Exchange' or 'Pool'
-    if label is not None:
-        wallets = __get_wallets_from_walletexplorer()
-        if wallets is not None:
-            for key in wallets:
-                if key in label:
-                    if wallets[key]['type'] in ['exchanges', 'pools']:
-                        illegal_activity = "No se ha encontrado actividad ilegal"
-                        break
-                    else:
-                        illegal_activity = wallets[key]['type']
-                        break
-    if illegal_activity is None:
-        illegal_activity =__get_report_from_bitcoinabuse(address)
-    return {
+def illegal_activity(info: dict) -> tuple:
+    address = Address.objects.filter(address=info['address']).first()
+    if address is not None:
+        illegal_activity = address.entity_id.entity_tag
+    else:
+        illegal_activity = None
+        address = info['address']
+        label = __get_label_from_address(address)
+        # Exclude addresses with label 'Exchange' or 'Pool'
+        if label is not None:
+            wallets = __get_wallets_from_walletexplorer()
+            if wallets is not None:
+                for key in wallets:
+                    if key in label:
+                        if wallets[key]['type'] in ['exchanges', 'pools']:
+                            illegal_activity = "No se ha encontrado actividad ilegal"
+                            break
+                        else:
+                            illegal_activity = wallets[key]['type']
+                            break
+        if illegal_activity is None:
+            illegal_activity =__get_report_from_bitcoinabuse(address)
+    return info,{
         'illegal_activity': illegal_activity,
     }
 
-def web_appearances(address: str) -> dict:
+def web_appearances(info: dict) -> tuple:
     """Returns a list of urls where the address has been found"""
+    address = Address.objects.filter(address=info['address']).first()
+    if address is not None:
+        web_appearances = WebAppearance.objects.filter(address=address)
+        if web_appearances.exists():
+            web_appearances = [ web.web_address for web in web_appearances ]
+    else:
+        web_appearances = []
+
+    address = info['address']
     query = f'"{address}" -site:blockexplorer.one -site:blockcypher.herokuapp.com -site:coin-cap.pro -site:btc.exan.tech -site:blockchain.info -site:btctocad.com -site:esplora.blockstream.com -site:bitcoinblockexplorers.com -site:bitinfocharts.com -site:bitcoinabuse.com -site:walletexplorer.com -site:blockchair.com -site:blockchain.com -site:blockcypher.com -site:blockstream.info -site:tokenscope.com'
     urls = list(search(query, tld="com", num=10, stop=10))
-    appearances = urls if urls else "No se han encontrado resultados"
-    return {
-        'web_appearances': appearances,
+    appearances = list(set(urls+web_appearances))
+    return info,{
+        'web_appearances': appearances if appearances else "No se han encontrado resultados",
     }
