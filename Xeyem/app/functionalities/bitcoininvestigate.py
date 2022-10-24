@@ -23,12 +23,13 @@ def __get_first_last_tx(address: str, n_tx: int, get_first: bool) -> tuple:
     url = f'https://www.walletexplorer.com/address/{address}'
     # To avoid certificate errors
     ssl._create_default_https_context = ssl._create_unverified_context
-    
+
     # We use pandas to get the LAST transaction
     df = pd.read_csv(url+'?format=csv', skiprows=[0])
     # And finally we return the first row from the date column
     last_tx = df['date'].iloc[0]
-    
+    last_tx = last_tx.split()[0]
+
     if get_first:
         # The first transaction is at the last row on the last page
         # the amount of txs for page is 100
@@ -39,13 +40,14 @@ def __get_first_last_tx(address: str, n_tx: int, get_first: bool) -> tuple:
             df = pd.read_csv(url+'&format=csv', skiprows=[0])
 
         first_tx = df['date'].iloc[-1]
+        first_tx = first_tx.split()[0]
     else:
         first_tx = None
-        
+
     return (first_tx,last_tx)
 
 def __parse_strlist(sl):
-    splitted = re.split(r',(?![^\[\]]*\])',sl)    
+    splitted = re.split(r',(?![^\[\]]*\])',sl)
     values_list = [ re.split(",", item[1:-1]) for item in splitted ]
 
     return values_list
@@ -60,19 +62,35 @@ def __get_different_proxy(proxies: list) -> str:
 def __get_address_list(info: dict) -> dict:
     if info is not None:
         txs = info['txs']
-        addresses = {'inputs': [], 'outputs': []}
+        addresses = {'inputs': {}, 'outputs': {}}
         for tx in txs:
-            for inp in tx['inputs']:
-                address_in = inp['prev_out']['addr']
-                if address_in != info['address'] and address_in not in addresses['inputs']:
-                    addresses['inputs'].append(address_in)
-            for out in tx['out']:
-                address_out = out['addr']
-                if address_out != info['address'] and address_out not in addresses['outputs']:
-                    addresses['outputs'].append(address_out)
+            is_input = tx['result'] > 0
+            if is_input:
+                for inp in tx['inputs']:
+                    address_in = inp['prev_out']['addr']
+                    if address_in != info['address']:
+                        if address_in not in addresses['inputs']:
+                            addresses['inputs'][address_in] = {
+                                'value': inp['prev_out']['value'],
+                                'count': 1
+                            }
+                        else:
+                            addresses['inputs'][address_in]['count'] += 1
+            else:
+                for out in tx['out']:
+                    address_out = out['addr']
+                    if address_out != info['address']:
+                        if address_out not in addresses['outputs']:
+                            addresses['outputs'][address_out] = {
+                                'value': out['value'],
+                                'count': 1
+                            }
+                        else:
+                            addresses['outputs'][address_out]['count'] += 1
+                            addresses['outputs'][address_out]['value'] += out['value']
     else:
         addresses = 'Error al obtener direcciones'
-        
+
     return addresses
 
 def __get_wallets_from_walletexplorer():
@@ -83,7 +101,7 @@ def __get_wallets_from_walletexplorer():
         print(res.content)
         soup = BeautifulSoup(res.text, 'html.parser')
         table = soup.find('table', {'class': 'serviceslist'})
-        table = table.tr 
+        table = table.tr
         wallets = {}
         for services in table.children:
             service_type = re.sub(r'/\w+$', '', services.h3.string.replace(':', '').lower())
@@ -94,7 +112,7 @@ def __get_wallets_from_walletexplorer():
                         'type': service_type,
                         'urls': urls
                     }
-        return wallets 
+        return wallets
     else:
         return None
 
@@ -126,10 +144,10 @@ def __get_report_from_bitcoinabuse(address: str) -> str:
             abuse_reports = abuse_reports.reset_index()
             abuse_reports = abuse_reports.iloc[0]
             abuse = abuse_types[abuse_reports['abuse_type_id']]
-    
+
     if abuse is None:
-        abuse = "No se ha encontrado actividad ilegal"
-    
+        abuse = "Unknown"
+
     return abuse
 
 def __get_tag_and_name(addr: str) -> tuple:
@@ -146,26 +164,21 @@ def __get_tag_and_name(addr: str) -> tuple:
 
 def __get_stored_info(addr: str) -> dict:
     """Function to get the stored info for an address"""
-    address = Address.objects.filter(address=addr)
-    if address.exists():
-        entity = Entity.objects.filter(address=addr)
+    address = Address.objects.filter(address=addr).first()
+    if address is not None:
+        entity = address.entity_id
         web_appearances = WebAppearance.objects.filter(address=addr)
-        suggested_tags  = SuggestedTag.objects.filter(address=addr)
-        notes = Note.objects.filter(address=addr)
-        last_search = json.loads(address.first().last_search) if last_search is not None else None
+        suggested_tags  = SuggestedTag.objects.filter(wallet_id=entity)
+        last_search = json.loads(address.last_search) if address.last_search is not None else None
         info = {
             'address': addr,
-            'entity': entity.first().address_tag if entity.exists() else None,
+            'entity': entity.entity_tag if entity is not None else None,
             'web_appearances': [ web_appearance.web_address for web_appearance in web_appearances ] if web_appearances.exists() else None,
             'suggested_tags': [{
                 'suggested_tag': suggested_tag.tag,
                 'suggested_by': suggested_tag.informant.email if suggested_tag.informant else None,
                 } for suggested_tag in suggested_tags ] if suggested_tags.exists() else None,
-            'notes': [{
-                'note': note.note,
-                'created_by': note.informant.email if note.informant else None,
-                } for note in notes ] if notes.exists() else None,
-            'informed_by': address.first().informant.email if address.first().informant else None,
+            'informed_by': address.informant.email if address.informant else None,
         }
         if last_search is not None:
             info['balance'] = last_search['balance']
@@ -175,7 +188,7 @@ def __get_stored_info(addr: str) -> dict:
             info['txs'] = last_search['txs']
             info['transactions'] = last_search['transactions']
             info['first_transaction'] = last_search['first_transaction']
-            info['last_transaction'] = last_search['last_transaction']                        
+            info['last_transaction'] = last_search['last_transaction']
 
     else:
         info = None
@@ -186,8 +199,8 @@ def __get_txs(address: str, json_response: dict) -> dict:
     """Function to get the transactions of an address"""
     # Total number of requests needed for getting all transactions
     total_req = ceil(json_response['n_tx'] / 100)
-    # Number of requests to be executed (max 5 == 500 txs)
-    req_n = total_req if total_req < 5 else 5
+    # Number of requests to be executed (max 2 == 200 txs)
+    req_n = total_req if total_req < 2 else 2
     for i in range(1, req_n):
         res_ok = False
         proxy_list = []
@@ -205,36 +218,36 @@ def __get_txs(address: str, json_response: dict) -> dict:
 
 def get_common_info(address: str) -> dict:
     stored_info = __get_stored_info(address)
+    proxy = FreeProxy().get()
     res = get(f'https://blockchain.info/rawaddr/{address}')
     if res.ok:
         json_response = res.json()
         #check if the total number of transactions is different from the stored one
-        if stored_info:
-            if len(stored_info['transactions']) != json_response['n_tx']:
-                json_response = __get_txs(address, json_response)
-                # Update list of transactions adding the new ones and removing duplicates
-                stored_info['transactions'] = list(set(stored_info['transactions'] + json_response['txs']))
-                # sort the list of transactions by time
-                stored_info['transactions'].sort(key=lambda tx: tx['time'], reverse=True)
-                stored_info['balance'] = json_response['final_balance']
-                stored_info['n_tx'] = json_response['n_tx']
-                stored_info['new_info'] = True
-            else:
-                stored_info['new_info'] = False
-
-        else:
+        if stored_info is None or 'n_tx' not in stored_info:
             stored_info = __get_txs(address, json_response)
             stored_info['new_info'] = True
-            stored_info['balance'] = stored_info.pop('final_balance')
+            stored_info['balance'] = json_response['final_balance']
+        elif stored_info['n_tx'] != json_response['n_tx']:
+            json_response = __get_txs(address, json_response)
+            # Update list of transactions adding the new ones and removing duplicates
+            stored_info['transactions'] = list(set(stored_info['transactions'] + json_response['txs']))
+            # sort the list of transactions by time
+            stored_info['transactions'].sort(key=lambda tx: tx['time'], reverse=True)
+            stored_info['balance'] = json_response['final_balance']
+            stored_info['n_tx'] = json_response['n_tx']
+            stored_info['new_info'] = True
+        else:
+            stored_info['new_info'] = False
 
     return stored_info
 
-def balance(info: dict) -> tuple:  
-    final_balance = info['balance'] / SATOSHI_DIVISOR if info is not None else 'Error al obtener balance'
+def balance(info: dict) -> tuple:
+    final_balance = info['balance'] / SATOSHI_DIVISOR if info is not None else 'Error on getting balance.'
     return info,{
         'balance': final_balance,
+        'coin': 'BTC',
     }
-    
+
 def fst_lst_transaction(info: dict) -> tuple:
     if info is not None:
         if not info['new_info']:
@@ -248,19 +261,19 @@ def fst_lst_transaction(info: dict) -> tuple:
             info['first_transaction'] = first_transaction
             info['last_transaction'] = last_transaction
     else:
-        first_transaction = last_transaction = "Error al obtener fecha"
-        
+        first_transaction = last_transaction = "Error on getting date."
+
     return info,{
         'first_transaction': first_transaction,
         'last_transaction': last_transaction,
     }
-    
+
 def balance_time(info: dict) -> tuple:
     address = info['address']
     url = f'https://bitinfocharts.com/bitcoin/address/{address}'
     headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246"}
     plt_div = None
-    
+
     res = get(url=url, headers=headers)
     if res.ok:
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -283,48 +296,91 @@ def balance_time(info: dict) -> tuple:
 
     if plt_div is None:
         plt_div = "Couldn't get balance through time"
-    
+
     return info,{'balance_time': plt_div}
 
 def transactions(info: dict) -> tuple:
     if info is not None:
-        if info['new_info']:
+        if info['new_info'] or 'most_transfered' not in info:
             txs = info['txs']
             transactions = []
+            most_transfered = { 'in':{}, 'out':{} }
             for tx in txs:
-                inputs = []
+                inputs = {}
+                outputs = {}
+                is_input = tx['result'] > 0
                 for inp in tx['inputs']:
-                    inputs.append({
-                        'address': inp['prev_out']['addr'],
-                        'value': inp['prev_out']['value'] / SATOSHI_DIVISOR,
-                    })
-                outputs = []
+                    if inp['prev_out']['addr'] != info['address']:
+                        address = inp['prev_out']['addr']
+                        if is_input:
+                            value = tx['result'] / SATOSHI_DIVISOR
+                            inputs[address] = value
+                        else:
+                            value = inp['prev_out']['value'] / SATOSHI_DIVISOR
+                            if address in inputs:
+                                inputs[address] += value
+                            else:
+                                inputs[address] = value
+                        
+
+
                 for out in tx['out']:
-                    outputs.append({
-                        'address': out['addr'],
-                        'value': out['value'] / SATOSHI_DIVISOR,
-                    })
+                    if out['addr'] != info['address']:
+                        value = out['value'] / SATOSHI_DIVISOR
+                        address = out['addr']
+                        if address in outputs:
+                            outputs[address] += value
+                        else:
+                            outputs[address] = value
+
+                if is_input:
+                    for address, value in inputs.items():
+                        if address in most_transfered['in']:
+                            most_transfered['in'][address]['value'] += value
+                        else:
+                            most_transfered['in'][address] = {
+                                    'value':value,
+                                    'tag':__get_tag_and_name(address)[0]
+                                }
+                else:
+                    for address, value in outputs.items():
+                            if address in most_transfered['out']:
+                                most_transfered['out'][address]['value'] += value
+                            else:
+                                most_transfered['out'][address] = {
+                                    'value':value,
+                                    'tag':__get_tag_and_name(address)[0]
+                                }
+
                 custom_tx = {
                     'hash' : tx['hash'],
-                    'date' : datetime.fromtimestamp(tx['time']).strftime("%Y-%m-%d %H:%M:%S"),
-                    'inputs': inputs,
-                    'outputs': outputs,
-                    'is_input': tx['result'] < 0,
+                    'date' : datetime.fromtimestamp(tx['time']).strftime("%Y-%m-%d %H:%M:%S"), # maybe just date
+                    'other_address': max(inputs, key=inputs.get) if is_input else max(outputs, key=outputs.get),
+                    'is_input': is_input,
                     'value': tx['result'] / SATOSHI_DIVISOR,
+                    'tag': __get_tag_and_name(max(inputs, key=inputs.get))[0] if is_input else __get_tag_and_name(max(outputs, key=outputs.get))[0],
                 }
                 transactions.append(custom_tx)
-            info['transactions'] = transactions   
+            info['transactions'] = transactions
+            # get the top 5 most transfered addresses 'in' and the top 5 most transfered addresses 'out'
+            most_transfered['in'] = sorted(most_transfered['in'].items(), key=lambda x: x[1]['value'], reverse=True)[:5]
+            most_transfered['out'] = sorted(most_transfered['out'].items(), key=lambda x: x[1]['value'], reverse=True)[:5]
+            info['most_transfered'] = most_transfered
         else:
             transactions = info['transactions']
+            most_transfered = info['most_transfered']
     else:
-        transactions = 'Error al obtener transacciones'
+        most_transfered = transactions = 'Error on getting transactions.'
 
-    return info,{'transactions': transactions,}
+    return info,{'transactions': transactions, 'most_transfered': most_transfered,}
 
 def transactions_stats(info: dict) -> tuple:
     if info is not None:
         addresses = __get_address_list(info)
-        all_addresses = list(set(addresses['inputs'] + addresses['outputs']))
+        inputs: dict= addresses['inputs']
+        outputs: dict= addresses['outputs']
+        all_addresses = set(list(inputs.keys()) + list(outputs.keys()))
+
         addresses_dict = {}
         for address in all_addresses:
             addresses_dict[address] = __get_tag_and_name(address)
@@ -334,22 +390,34 @@ def transactions_stats(info: dict) -> tuple:
             'outputs': {},
         }
         exchanges = []
+        exc = {}
 
-        for address in addresses['inputs']:
+        for address in addresses['inputs'].keys():
             label = addresses_dict[address][0]
             if label in labels['inputs']:
                 labels['inputs'][label] += 1
             else:
-                labels['inputs'][label] = 1
+                labels['inputs'][label] = addresses['inputs'][address]['count']
         # get how many times a label appears in the outputs
-        for address in addresses['outputs']:
+        for address in addresses['outputs'].keys():
             label = addresses_dict[address][0]
             if label == 'Exchange':
-                exchanges.append(addresses_dict[address][1])
+                exchange = addresses_dict[address][1]
+                value = addresses['outputs'][address]['value']
+                exc[exchange] = value if exchange not in exc else exc[exchange] + value
+
             if label in labels['outputs']:
                 labels['outputs'][label] += 1
             else:
-                labels['outputs'][label] = 1
+                labels['outputs'][label] = addresses['outputs'][address]['count']
+
+        for key,value in exc.items():
+            exchanges.append({
+                'name': key,
+                'ammount': value / SATOSHI_DIVISOR
+            })
+        exchanges = sorted(exchanges, key=lambda x: x['ammount'], reverse=True)[:4]
+
         # get the label stats for the inputs
         inputs = []
         for label in labels['inputs']:
@@ -365,30 +433,44 @@ def transactions_stats(info: dict) -> tuple:
                 'count': labels['outputs'][label],
             })
         # plot the input stats on a pie chart using plotly
-        fig = px.pie(data_frame=pd.DataFrame(inputs), names='label', values='count')
-        fig = fig.update_traces(textposition='inside', textinfo='percent+label')
-        inputs_div = fig.to_html(include_plotlyjs=False, full_html=False, div_id="inputs_div")
+        if inputs != []:
+            fig = px.pie(data_frame=pd.DataFrame(inputs), names='label', values='count')
+            fig = fig.update_traces(textposition='inside', textinfo='percent+label')
+            inputs_div = fig.to_html(include_plotlyjs=False, full_html=False, div_id="inputs_div")
+        else:
+            inputs_div = "No stats to display"
         # plot the output stats on a pie chart using plotly
-        fig2 = px.pie(data_frame=pd.DataFrame(outputs), names='label', values='count')
-        fig2=fig2.update_traces(textposition='inside', textinfo='percent+label')
-        outputs_div = fig2.to_html(include_plotlyjs=False, full_html=False, div_id="outputs_div")
-        exchanges = list(set(exchanges))
+        if outputs != []:
+            fig2 = px.pie(data_frame=pd.DataFrame(outputs), names='label', values='count')
+            fig2=fig2.update_traces(textposition='inside', textinfo='percent+label')
+            outputs_div = fig2.to_html(include_plotlyjs=False, full_html=False, div_id="outputs_div")
+        else:
+            outputs_div = "No stats to display"
     else:
-        inputs_div = outputs_div = "Error al obtener estadísticas de transacciones"
+        inputs_div = outputs_div = "Error on getting stats."
 
     return info,{
         'inputs_stats': inputs_div,
         'outputs_stats': outputs_div,
         'exchanges': exchanges,
     }
-        
-            
-def related_addresses(info: dict) -> tuple: 
-    address = Address.objects.filter(address=info['address'])
-    if address.exists():
-        related = [ addr.address for addr in address ]
-    else:    
-        address = info['address'] 
+
+
+def related_addresses(info: dict) -> tuple:
+    address = Address.objects.filter(address=info['address']).first()
+    if address is not None:
+        related_addresses = Address.objects.filter(entity_id=address.entity_id).exclude(address=info['address'])
+        related_addresses = [{
+            'address': address.address,
+            'pk': address.pk,
+            'informant': address.informant if address.informant is not None else None
+        } for address in related_addresses]
+        related = {
+            'addresses': related_addresses,
+        }
+
+    else:
+        address = info['address']
         label = __get_label_from_address(address)
         ssl._create_default_https_context = ssl._create_unverified_context
         url = f'https://walletexplorer.com/wallet/{label}/addresses?format=csv'
@@ -405,51 +487,100 @@ def related_addresses(info: dict) -> tuple:
                     related['url'] = f'https://walletexplorer.com/wallet/{label}/addresses',
         else:
             related = {
-                'addresses': 'Error al obtener direcciones relacionadas.'
+                'addresses': 'Error on getting related addresses.'
                 }
-    
+
     return info,related
 
 def illegal_activity(info: dict) -> tuple:
     address = Address.objects.filter(address=info['address']).first()
-    if address is not None:
+    if address is not None and address.entity_id.entity_tag != 'Other':
         illegal_activity = address.entity_id.entity_tag
+        illegal_activity = illegal_activity if illegal_activity != 'Other' else 'Unknown'
     else:
         illegal_activity = None
-        address = info['address']
-        label = __get_label_from_address(address)
+        addr = info['address']
+        label = __get_label_from_address(addr)
         # Exclude addresses with label 'Exchange' or 'Pool'
         if label is not None:
             wallets = __get_wallets_from_walletexplorer()
             if wallets is not None:
                 for key in wallets:
                     if key in label:
-                        if wallets[key]['type'] in ['exchanges', 'pools']:
-                            illegal_activity = "No se ha encontrado actividad ilegal"
+                        if wallets[key]['type'] == 'exchanges':
+                            illegal_activity = "Exchange"
+                            break
+                        elif wallets[key]['type'] == 'pools':
+                            illegal_activity = "Pool"
                             break
                         else:
                             illegal_activity = wallets[key]['type']
                             break
+
         if illegal_activity is None:
-            illegal_activity =__get_report_from_bitcoinabuse(address)
+            illegal_activity =__get_report_from_bitcoinabuse(addr)
+
+    info['illegal_activity'] = {
+        'is_illegal': illegal_activity not in ['Unknown', 'Exchange', 'Pool'],
+        'tag': illegal_activity
+    }
+    if illegal_activity != 'Unknown' and address is not None:
+        if address.entity_id.entity_tag in ['Other', '', None]:
+            address.entity_id.entity_tag = illegal_activity
+            address.entity_id.save()
     return info,{
-        'illegal_activity': illegal_activity,
+        'illegal_activity': info['illegal_activity'],
     }
 
 def web_appearances(info: dict) -> tuple:
-    """Returns a list of urls where the address has been found"""
-    address = Address.objects.filter(address=info['address']).first()
-    if address is not None:
-        web_appearances = WebAppearance.objects.filter(address=address)
-        if web_appearances.exists():
-            web_appearances = [ web.web_address for web in web_appearances ]
+    """Get web appearances from the transactions of an Ethereum address"""
+    print('Getting web appearances...')
+    if info is None:
+        web_appearances = 'Error on getting web appearances.'
     else:
-        web_appearances = []
-
-    address = info['address']
-    query = f'"{address}" -site:blockexplorer.one -site:blockcypher.herokuapp.com -site:coin-cap.pro -site:btc.exan.tech -site:blockchain.info -site:btctocad.com -site:esplora.blockstream.com -site:bitcoinblockexplorers.com -site:bitinfocharts.com -site:bitcoinabuse.com -site:walletexplorer.com -site:blockchair.com -site:blockchain.com -site:blockcypher.com -site:blockstream.info -site:tokenscope.com'
-    urls = list(search(query, tld="com", num=10, stop=10))
-    appearances = list(set(urls+web_appearances))
-    return info,{
-        'web_appearances': appearances if appearances else "No se han encontrado resultados",
+        address = info['address']
+        query = f"{address}"
+        urls = list(search(query, tld="com", num=10, stop=10))
+        address = Address.objects.filter(address=info['address']).first()
+        if address is not None:
+            web_appearances_objects = WebAppearance.objects.filter(address=address)
+            web_appearances = [{
+                'web_address': web.web_address,
+                'informant': web.informant,
+                'address': web.address
+            } for web in web_appearances_objects]
+            for url in urls:
+                if url not in [web['web_address'] for web in web_appearances]:
+                    web_appearances.append({
+                        'web_address': url,
+                        'informant': None,
+                        'address': address
+                    })
+        else:
+            web_appearances = [{
+                'web_address': url,
+            } for url in urls]
+    return info, {
+        'web_appearances': web_appearances
     }
+
+def store_results(info: dict, results: dict) -> bool:
+    """Store the results of the analysis in the database"""
+    if info is None:
+        return False
+    addr = info['address']
+    last_search = json.dumps(info)
+    illegal = info['illegal_activity']['tag']
+    addr_tag = illegal if illegal != 'Unknown' else 'Other'
+    address = Address.objects.filter(address=addr).first()
+    if address is None:
+        entity = Entity.objects.create(entity_tag=addr_tag)
+        address = Address.objects.create(address=addr, entity_id=entity, last_search=last_search)
+    elif info['new_info']:
+        address.last_search = last_search
+        address.save()
+    if 'web_appearances' in results:
+        for appearance in results['web_appearances']:
+            WebAppearance.objects.get_or_create(address=address, web_address=appearance['web_address'])
+
+    return True
