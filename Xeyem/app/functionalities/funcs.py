@@ -39,4 +39,7 @@ def execute_search(address: str, funcs: set) -> dict:
         if func is not None:
             shared_info,result = func(shared_info)
             results.update(result)
+    func = getattr(token_dict['module'], 'store_results', None)
+    if func is not None:
+        func(shared_info, results)
     return results
