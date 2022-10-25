@@ -1,0 +1,88 @@
+<div class="col d-flex flex-column justify-content-between align-items-center col-xl-5">
+    <div class="row w-100" style="margin-bottom: 10px;">
+        <div class="col p-0">
+            <div class="card">
+                <div class="card-header" style="background-color: #d4edda;">
+                    <h6 class="fw-semibold text-center text-success" style="margin: 0;">FREQUENT INPUTS</h6>
+                </div>
+                <div class="card-body px-0" style="padding: 4px;padding-bottom: 0;padding-top: 0;">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm table-bordered m-0">
+                            <thead class="text-bg-light">
+                                <tr>
+                                    <th>Address</th>
+                                    <th>Amount</th>
+                                    <th>Tag</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in results.most_transfered.in %}
+                                <tr>
+                                    <td><form method="POST" action="{% url 'dashboard' default_dashboard %}" target="_blank">{% csrf_token %}<button class="btn btn-link m-0 p-0" type="submit" name="address" value="{{entry.0}}"><span style="color: unset; background-color: unset;">{{entry.0}}</span><br /></button></form><br></td>
+                                    <td>{{entry.1.value}}&nbsp;{{results.coin}}<br></td>
+                                    <td>{{entry.1.tag}}<br></td>
+                                </tr>
+                                {% comment %} <tr>
+                                    <td>12cgpFdJViXbwHbhrA3TuW1EGnL25Zqc3P<br></td>
+                                    <td>399.02297 BTC<br></td>
+                                    <td>Exchange<br></td>
+
+                                </tr>
+                                <tr>
+                                    <td>1447YhZfYALi4HrvQqyMJ1sSvGTKZHhPRz<br></td>
+                                    <td>380.55333 BTC<br></td>
+                                    <td>Other<br></td>
+
+                                </tr>
+                                <tr>
+                                    <td>1PShQwGqtbrdW391URKdi9zty2sgSUEJcR<br></td>
+                                    <td>293.85786 BTC<br></td>
+                                    <td>Other<br></td>
+
+                                </tr>
+                                <tr>
+                                    <td>1FoxBitjXcBeZUS4eDzPZ7b124q3N7QJK7<br></td>
+                                    <td>164.07476 BTC<br></td>
+                                    <td>Other<br></td>
+
+                                </tr> {% endcomment %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row w-100" style="margin-top: 10px;">
+        <div class="col p-0">
+            <div class="card">
+                <div class="card-header" style="background-color: #ffdad8;">
+                    <h6 class="fw-semibold text-center text-danger" style="margin: 0;">FREQUENT OUTPUTS</h6>
+                </div>
+                <div class="card-body px-0" style="padding: 4px;padding-bottom: 0;padding-top: 0;">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm table-bordered m-0">
+                            <thead class="text-bg-light">
+                                <tr>
+                                    <th>Address</th>
+                                    <th>Amount</th>
+                                    <th>Tag</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in results.most_transfered.out %}
+                                <tr>
+                                    <td><form method="POST" action="{% url 'dashboard' default_dashboard %}" target="_blank">{% csrf_token %}<button class="btn btn-link m-0 p-0" type="submit" name="address" value="{{entry.0}}"><span style="color: unset; background-color: unset;">{{entry.0}}</span><br /></button></form><br></td>
+                                    <td>{{entry.1.value}}&nbsp;{{results.coin}}<br></td>
+                                    <td>{{entry.1.tag}}<br></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
