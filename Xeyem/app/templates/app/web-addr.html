@@ -1,0 +1,149 @@
+<div class="row mt-4">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header d-flex flex-row justify-content-between" style="background-color: #b8daff;">
+                <i class="fas fa-plus fs-4" style="color: #b8daff;"></i>
+                <h6 class="fw-semibold text-center" style="margin: 0;">WEB APPEARANCES</h6>
+                <button type="submit" class="btn btn-sm btn-link text-decoration-none text-reset" data-bs-toggle="modal" data-bs-target="#webCreateModal">
+                    <i class="fas fa-plus fs-4 text-muted"></i>
+                </button>
+            </div>
+            <div class="card-body p-1">
+                <div class="row d-flex flex-row justify-content-center align-items-center h-100">
+                    <div class="col d-flex flex-column justify-content-center align-items-center w-100">
+                        <ul class="list-group text-center w-100 overflow-auto" style="max-height: 300px;">
+                            {% for web in results.web_appearances %}
+                            <li class="list-group-item d-flex flex-row justify-content-between align-items-center">
+                                {% if web.informant %}
+                                <span><i class="fas fa-user"></i></span>
+                                {% else %}
+                                <span></span>
+                                {% endif %}
+                                <a href="{{web.web_address}}">{{web.web_address}}</a>
+                                {% if web.informant == user %}
+                                <span>
+                                    <form action="{% url 'web-delete' web.pk %}" method="POST" class="deleteAddr">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-link text-decoration-none text-reset">
+                                            <i class="fas fa-trash text-muted"></i>
+                                        </button>
+                                    </form> 
+                                </span>
+                                {% else %}
+                                <span></span>
+                                {% endif %} 
+                            </li>
+                            {% empty %}
+                            <div class="no-web-appearances-message text-center">
+                                <span class= "text-center" style='transform: rotate(-90deg);'>No web appearances</span>
+                            </div>
+                            {% endfor %} 
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header d-flex flex-row justify-content-between" style="background-color: #b8daff;">
+                <i class="fas fa-plus fs-4" style="color: #b8daff;"></i>
+                <h6 class="fw-semibold text-center" style="margin: 0;">RELATED ADDRESSES</h6>
+                <button type="submit" class="btn btn-sm btn-link text-decoration-none text-reset" data-bs-toggle="modal" data-bs-target="#addressCreateModal">
+                    <i class="fas fa-plus fs-4 text-muted"></i>
+                </button>
+            </div>
+            <div class="card-body p-1">
+                <div class="row d-flex flex-row justify-content-center align-items-center h-100">
+                    <div class="col d-flex flex-column align-items-center h-100">
+                        <ul class="list-group text-center w-100 overflow-auto" style="max-height: 300px;">
+                            {% for addr in results.addresses %}
+                            <li class="list-group-item d-flex flex-row justify-content-between align-items-center">
+                                {% if addr.informant %}
+                                <span><i class="fas fa-user"></i></span>
+                                {% else %}
+                                <span></span>
+                                {% endif %}
+                                <form method="POST" action="{% url 'dashboard' default_dashboard %}" target="_blank">
+                                    {% csrf_token %}
+                                    <button class="btn btn-link m-0 p-0" type="submit" name="address" value="{{addr.address}}">
+                                        <span style="color: unset; background-color: unset;">{{addr.address}}</span><br />
+                                    </button>
+                                </form>
+                                {% if addr.informant == user %}
+                                <span>
+                                    <form action="{% url 'address-delete' addr.pk %}" method="POST" class="deleteAddr">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-link text-decoration-none text-reset">
+                                            <i class="fas fa-trash text-muted"></i>
+                                        </button>
+                                    </form> 
+                                </span>
+                                {% else %}
+                                <span></span>
+                                {% endif %} 
+                            </li>
+                            {% empty %}
+                            <div class="no-related-addresses-message text-center">
+                                <span class= "text-center" style='transform: rotate(-90deg);'>No related addresses</span>
+                            </div>
+                            {% endfor %} 
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addressCreateModal" tabindex="-1" aria-labelledby="modalForm" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{% url 'address-create' address %}" class="relatedAddresses">
+                    {% csrf_token %}
+                    <!-- Address entry -->
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="address" name="address" placeholder="Enter address">
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <!--<input class="button" type="submit" value="Submit">-->
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="webCreateModal" tabindex="-1" aria-labelledby="modalForm" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modal title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{% url 'web-create' address %}" class="relatedWebsites">
+                    {% csrf_token %}
+                    <!-- Website entry -->
+                    <div class="mb-3">
+                        <label for="website" class="form-label">Website</label>
+                        <input type="text" class="form-control" id="website" name="web_address" placeholder="Enter url">
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <!--<input class="button" type="submit" value="Submit">-->
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
