@@ -1,0 +1,30 @@
+<div class="row mt-4">
+    <div class="col col-lg-6">
+        <div class="card">
+            <div class="card-header text-success" style="background: #d4edda;">
+                <h6 class="fw-semibold text-center" style="margin: 0;">INPUT STATS</h6>
+            </div>
+            <div class="card-body p-1">
+                <div class="row d-flex flex-row justify-content-center align-items-center h-100">
+                    <div class="col d-flex flex-column justify-content-center align-items-center h-100">
+                        {{results.inputs_stats|safe}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col col-lg-6">
+        <div class="card">
+            <div class="card-header text-danger" style="background-color: #ffdad8;">
+                <h6 class="fw-semibold text-center" style="margin: 0;">OUTPUT STATS</h6>
+            </div>
+            <div class="card-body p-1">
+                <div class="row d-flex flex-row justify-content-center align-items-center h-100">
+                    <div class="col d-flex flex-column justify-content-center align-items-center h-100">
+                        {{results.outputs_stats|safe}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
