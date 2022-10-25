@@ -1,0 +1,104 @@
+<div class="col d-flex flex-column justify-content-between align-items-center col-xl-2">
+    <div class="row w-100">
+        <div class="col col-12">
+            <div class="card card-border-0 border-start border-success border-4 mb-4">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col col-10">
+                            <div class="small fw-bold text-success text-uppercase mb-1"><small>Balance</small></div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                <h5><span style="color: rgb(52, 58, 64);">
+                                    {% if results.balance %}
+                                    {{results.balance|floatformat:"-5"}}
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                    {{results.coin}}</span><br>
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="col col-2">
+                            {% if results.coin == 'BTC' %}
+                            <i class="fab fa-btc fs-3" style="color:#dee2e6;"></i>
+                            {% elif results.coin == 'ETH' %}
+                            <i class="fa-brands fa-ethereum fs-3" style="color:#dee2e6;"></i>
+                            {% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row w-100">
+        {% if results.illegal_activity %}
+        <div class="col col-12">
+            {% if results.illegal_activity.is_illegal %}
+            <div class="card card-border-0 border-start border-warning border-4 mb-4">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col col-10">
+                            <div class="small fw-bold text-warning text-uppercase mb-1"><small>Illegal Activity</small></div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                <h5><span style="color: rgb(52, 58, 64);">{{results.illegal_activity.tag}}</span><br></h5>
+                            </div>
+                        </div>
+                        <div class="col col-2"><i class="fas fa-skull-crossbones fs-3" style="color: #dee2e6;"></i></div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card card-border-0 border-start border-primary border-4 mb-4">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col col-10">
+                            <div class="small fw-bold text-primary text-uppercase mb-1"><small>Wallet Tag</small></div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                <h5><span style="color: rgb(52, 58, 64);">{{results.illegal_activity.tag}}</span><br></h5>
+                            </div>
+                        </div>
+                        {% if results.illegal_activity.tag == 'Unknown' %}
+                        <div class="col col-2"><i class="fa-solid fa-question fs-3" style="color: #dee2e6;"></i></div>
+                        {% else %}
+                        <div class="col col-2"><i class="fas fa-store-alt fs-3" style="color: #dee2e6;"></i></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="row w-100">
+        <div class="col col-12">
+            <div class="card card-border-0 border-start border-info border-4 mb-4">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col col-10">
+                            <div class="small fw-bold text-info text-uppercase mb-1"><small>FIRST TRANSACTION</small></div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                <h5><span style="color: rgb(52, 58, 64);">{{results.first_transaction}}</span><br></h5>
+                            </div>
+                        </div>
+                        <div class="col col-2"><i class="fas fa-calendar fs-3" style="color: #dee2e6;"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row w-100">
+        <div class="col col-12">
+            <div class="card card-border-0 border-start border-info border-4 mb-4">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col col-10">
+                            <div class="small fw-bold text-info text-uppercase mb-1"><small>LAST TRANSACTION</small></div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                <h5><span style="color: rgb(52, 58, 64);">{{results.last_transaction}}</span><br></h5>
+                            </div>
+                        </div>
+                        <div class="col col-2"><i class="fas fa-calendar fs-3" style="color: #dee2e6;"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
