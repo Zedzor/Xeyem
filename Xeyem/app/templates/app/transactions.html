@@ -1,0 +1,69 @@
+{% load app_extras %}
+<div class="col-lg-12 mb-4">
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex flex-row justify-content-between" style="background-color: #b8daff;">
+            <span></span>
+            <h6 class="fw-semibold text-center" style="margin: 0;">TRANSACTIONS</h6>
+            <span></span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <div class="table-responsive-sm">
+                    <table id="dataTable" class="table small table-striped table-sm justify-content-center" cellspacing="0" width="100%">
+                        <thead>
+                            <tr>
+                            
+                            <th class="th-lg">Date
+                            </th>
+                            <th class="th-sm">Direction
+                            </th>
+                            <th class="th-sm">Amount
+                            </th>
+                            <th class="th-sm">Exchange
+                            </th>
+                            <th class="th-sm">Address
+                            </th>
+                            <th class="th-sm">Details
+                            </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in results.transactions %}
+                            <tr>
+                                <td>{% with transaction.date|separate as date %}{{date.0}}&nbsp;<small class"text-muted">{{date.1}}</small>{% endwith %}</td>
+                                <td>{% if transaction.is_input %} <span class="badge text-success" style="background: #d4edda;">IN</span> {% else %} <span class="badge badge-soft-purple">OUT</span> {% endif %}</td>
+                                <td>{{transaction.value}} {{results.coin}}</td>
+                                <td> {% if transaction.tag == 'Exchange' %}<span>Exchange</span>{% else %}<span></span>{% endif %}</td>
+                                <td><form method="POST" action="{% url 'dashboard' default_dashboard %}" target="_blank">{% csrf_token %}<button class="btn btn-link m-0 p-0" type="submit" name="address" value="{{transaction.other_address}}"><span style="color: unset; background-color: unset;">{{transaction.other_address}}</span><br /></button></form><br></td>
+                                {% if results.coin == 'ETH' %}
+                                <td><a href="https://etherscan.io/tx/{{transaction.hash}}" target="_blank"><i class="fas fa-info-circle text-primary fs-4"></i></a></td>
+                                {% elif results.coin == 'BTC' %}
+                                <td><a href="https://www.blockchain.com/btc/tx/{{transaction.hash}}" target="_blank"><i class="fas fa-info-circle text-primary fs-4"></i></a></td>
+                                {% else %}
+                                <td><a href="https://www.blockchain.com/btc/tx/{{transaction.hash}}" target="_blank"><i class="fas fa-info-circle text-primary fs-4"></i></a></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Date
+                                </th>
+                                <th>Direction
+                                </th>
+                                <th>Amount
+                                </th>
+                                <th>Exchange
+                                </th>
+                                <th>Address
+                                </th>
+                                <th>Details
+                                </th>            
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
