@@ -2,7 +2,7 @@ from app.models import Address, Entity
 import csv
 
 def save_Mining():
-    with open('app/EntitiesAddressesBTC/data/Mining_parsed.csv') as file:
+    with open('data/Mining_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of mining
@@ -24,7 +24,7 @@ def save_Mining():
         mining = []
 
 def save_Addresses():
-    with open('app/EntitiesAddressesBTC/data/Mining_parsed.csv') as file:
+    with open('data/Mining_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of mining

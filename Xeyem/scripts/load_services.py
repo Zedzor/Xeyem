@@ -68,7 +68,7 @@ def identify_service(name: str) -> str:
     return 'Unnamed service'
 
 def save_Services():
-    with open('app/EntitiesAddressesBTC/data/Services_parsed.csv') as file:
+    with open('data/Services_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of services
@@ -90,7 +90,7 @@ def save_Services():
         services = []
 
 def save_Addresses():
-    with open('app/EntitiesAddressesBTC/data/Services_parsed.csv') as file:
+    with open('data/Services_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of gambling

@@ -2,7 +2,7 @@ from app.models import Address, Entity
 import csv
 
 def save_Gambling():
-    with open('app/EntitiesAddressesBTC/data/Gambling_parsed.csv') as file:
+    with open('data/Gambling_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of gambling
@@ -24,7 +24,7 @@ def save_Gambling():
         gambling = []
 
 def save_Addresses():
-    with open('app/EntitiesAddressesBTC/data/Gambling_parsed.csv') as file:
+    with open('data/Gambling_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of gambling

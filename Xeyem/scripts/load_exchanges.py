@@ -58,7 +58,7 @@ INFO = {
 }
 
 def save_Exchanges():
-    with open('app/EntitiesAddressesBTC/data/Exchanges_parsed.csv') as file:
+    with open('data/Exchanges_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of exchanges
@@ -81,7 +81,7 @@ def save_Exchanges():
 
 
 def save_Addresses():
-    with open('app/EntitiesAddressesBTC/data/Exchanges_parsed.csv') as file:
+    with open('data/Exchanges_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         # list of addresses

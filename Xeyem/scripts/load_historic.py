@@ -68,7 +68,7 @@ def identify_service(name: str) -> str:
     return 'Unnamed service'
 
 def save_Historic():
-    with open('app/EntitiesAddressesBTC/data/Historic_parsed.csv') as file:
+    with open('data/Historic_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of historic
@@ -90,7 +90,7 @@ def save_Historic():
         historic = []
 
 def save_Addresses():
-    with open('app/EntitiesAddressesBTC/data/Historic_parsed.csv') as file:
+    with open('data/Historic_parsed.csv') as file:
         reader = csv.reader(file)
         next(reader)  # Advance past the header
         #list of historic
