@@ -1,0 +1,56 @@
+{% load static %}
+<div class="col col-xl-2">
+    <div class="row">
+        <div class="col d-flex flex-column justify-content-center align-items-center">
+            <h5>Used Exchanges</h5>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col d-flex flex-column justify-content-between align-items-center">
+            <!-- No used exchanges message rotated text 90 degrees -->
+            {% for exchange in results.exchanges %}
+                    
+            <div class="row w-100 align-items-center mt-3">
+                <div class="col d-flex flex-column justify-content-center align-items-center">
+                    <img src="{% static 'images/' %}{{exchange.name}}.png" onerror="this.onerror=null; this.src='/static/images/shop-solid.svg'" width="80vm">
+                    <small>{{exchange.name}}</small><span>{{exchange.ammount}} {{results.coin}}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-used-exchanges-message text-center">
+                <span class= "text-center" style='transform: rotate(-90deg);'>No used exchanges</span>
+            </div>
+            {% endfor %}
+            
+
+            {% comment %} <div class="row w-100 align-items-center mt-3">
+                <div class="col d-flex flex-column justify-content-center align-items-center">
+                    <img src="{% static 'images/HitBtc.com.png' %}" width="80vm">
+                    <small>HitBtc.com</small><span>11.04 {{results.coin}}</span>
+                </div>
+            </div> {% endcomment %}
+            
+        
+            
+            {% comment %} <div class="row w-100 align-items-center mt-3">
+                <div class="col d-flex flex-column justify-content-center align-items-center"><img src="https://www.kraken.com/_assets/icons/apple-touch-icon.png" width="80vm"><small>Kraken.com</small><span>0.43 {{results.coin}}</span></div>
+            </div>
+            <div class="row w-100 align-items-center mt-3">
+                <div class="col d-flex flex-column justify-content-center align-items-center"><img src="https://www.huobi.com/favicon.ico" width="80vm"><small>Huobi.com</small><span>0.09 {{results.coin}}</span></div>
+            </div>
+            <div class="row w-100 align-items-center mt-3">
+                <div class="col d-flex flex-column justify-content-center align-items-center"><img src="https://d32exi8v9av3ux.cloudfront.net/static/v3/icons/favicons/favicon-152x152.png" width="80vm"><small>Luno.com</small><span>0.03 {{results.coin}}</span></div>
+            </div> {% endcomment %}
+        </div>
+    </div>
+</div>
+<div class="col col-xl-10">
+    <div class="card h-100">
+        <div class="card-header" style="background-color: #b8daff;">
+            <h6 class="fw-semibold text-center" style="margin: 0;">HISTORICAL BALANCE</h6>
+        </div>
+        <div class="card-body p-1 justify-content-center align-items-center">
+            {{results.balance_time|safe}}
+        </div>
+    </div>
+</div>
