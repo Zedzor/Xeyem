@@ -12,7 +12,7 @@ from django.views.generic.edit import FormMixin
 from django.http import Http404, HttpResponse, JsonResponse
 from django.contrib.auth import login
 from django.urls import reverse_lazy
-
+from .templatetags.app_extras import total_votes
 from .functionalities.funcs import execute_search
 from .models import Address, Dashboard, Note, Search, WebAppearance
 from .forms import ExecuteSearchForm, UserCreationForm
@@ -87,9 +87,17 @@ class HomeView(ListView):
 
             # Filter by date range and order by date
             context['searches'] = context['searches'].filter(search_date__range=(filter_query[top_filter], end_datetime)).order_by('-search_date')
+            context['top_filter'] = top_filter
             # Group by address and show count
             context['searches'] = context['searches'].values('wallet_address').annotate(count=Count('wallet_address')).order_by('-count')
-
+            context['searches'] = context['searches'][:5]
+            # get tags for each address
+            for search in context['searches']:
+                address = Address.objects.filter(address=search['wallet_address'].lower()).first()
+                if address:
+                    search['tag'] = address.entity_id.entity_tag
+                else:
+                    search['tag'] = 'Other'
         return context
 
 
@@ -102,6 +110,16 @@ class DashboardDetail(LoginRequiredMixin, FormMixin, DetailView):
     def get_queryset(self):
         qs = super(DashboardDetail, self).get_queryset().filter(user_id=self.request.user)
         return qs
+
+    def __get_most_voted_notes(self, notes):
+        note_list = []
+        for note in notes:
+            note_list.append({
+                'note': note,
+                'votes': total_votes(note.upvotes, note.downvotes)
+            })
+        note_list = sorted(note_list, key=lambda k: k['votes'], reverse=True)[:5]
+        return [ note['note'] for note in note_list ]
     
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -117,9 +135,11 @@ class DashboardDetail(LoginRequiredMixin, FormMixin, DetailView):
                 )
                 new_search.save()
                 context = self.get_context_data(**kwargs)
+                context['default_dashboard'] = dashboard.pk
                 context['results'] = results
-                context['address'] = address
-                context['notes'] = Note.objects.filter(wallet_address=address)
+                context['address'] = address.lower()
+                context['notes'] = Note.objects.filter(wallet_address=address.lower())
+                context['top_notes'] = self.__get_most_voted_notes(context['notes'])
                 return render(request, 'app/dashboard.html', context)
             except Http404:
                 raise
@@ -136,6 +156,23 @@ class NoteList(ListView):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
             context['notes'] = context['notes'].filter(wallet_address=self.kwargs['address'])
+        return context
+
+class AddressList(ListView):
+    model = Address
+    template_name = 'app/web-addr.html'
+    context_object_name = 'addresses'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            if 'results' not in context:
+                context['results'] = {}
+            addr = Address.objects.filter(address=self.kwargs['address'])
+            context['default_dashboard'] = Dashboard.objects.filter(user_id=self.request.user, default_dashboard=True).first().pk
+            context['address'] = addr.first().address
+            context['results']['addresses'] = context['addresses'].filter(entity_id=addr.first().entity_id)
+            context['results']['web_appearances'] = WebAppearance.objects.filter(address=addr.first())
         return context
 
 def success(request):
@@ -159,6 +196,25 @@ class NoteCreate(LoginRequiredMixin, CreateView):
         form.instance.wallet_address = get_object_or_404(Address, address=address)
         return super(NoteCreate, self).form_valid(form)
 
+class AddressCreate(LoginRequiredMixin, CreateView):
+    model = Address
+    fields = ['address']
+    success_url = reverse_lazy('success')
+    slug_field: str = 'address'
+    slug_url_kwarg: str = 'address'
+    success_url = reverse_lazy('success')
+
+    def form_invalid(self, form):
+        print(form.errors)
+        print(form.non_field_errors)
+        print("INVALID")
+    
+    def form_valid(self, form):
+        form.instance.informant = self.request.user
+        address = self.kwargs['address']
+        form.instance.address = form.instance.address.lower()
+        form.instance.entity_id = Address.objects.get(address=address).entity_id
+        return super(AddressCreate, self).form_valid(form)
 
 
 class NoteDelete(LoginRequiredMixin, DeleteView):
@@ -173,17 +229,69 @@ class NoteDelete(LoginRequiredMixin, DeleteView):
     def get(self, *args, **kwargs):
         return redirect('index')
 
+class AddressDelete(LoginRequiredMixin, DeleteView):
+    model = Address
+    context_object_name = 'address'
+    success_url = reverse_lazy('success')
+
+    def get_queryset(self):
+        qs = super(AddressDelete, self).get_queryset().filter(informant=self.request.user)
+        return qs
+    
+    def get(self, *args, **kwargs):
+        return redirect('success')
+
+def handle_vote(request, pk):
+    if request.method == 'POST':
+        # get note from pk from url
+        note = get_object_or_404(Note, pk=pk)
+        vote = request.POST.get('vote')
+        user = request.user
+        upvoters = note.upvotes.split(',')
+        downvoters = note.downvotes.split(',')
+        if vote == 'up':
+            if user.email in upvoters:
+                return JsonResponse({'success':False}, status=403)
+            if user.email in downvoters:
+                # remove user and following comma
+                note.downvotes = note.downvotes.replace(user.email + ',', '')
+            note.upvotes += user.email + ','
+            note.save()
+            return JsonResponse({'success':True}, status=200)
+        elif vote == 'down':
+            if user.email in downvoters:
+                return JsonResponse({'success':False}, status=403)
+            if user.email in upvoters:
+                # remove user and following comma
+                note.upvotes = note.upvotes.replace(user.email + ',', '')
+            note.downvotes += user.email + ','
+            note.save()
+            return JsonResponse({'success':True}, status=200)
+    return JsonResponse({'success':False}, status=400)
+
 class WebAppearanceCreate(LoginRequiredMixin, CreateView):
     model = WebAppearance
     fields = ['web_address']
     success_url = reverse_lazy('success')
 
     def form_valid(self, form):
-        form.instance.user_id = self.request.user
+        form.instance.informant = self.request.user
         address = self.kwargs['address']
         form.instance.address = get_object_or_404(Address, address=address)
         return super(WebAppearanceCreate, self).form_valid(form)
     
+class WebAppearanceDelete(LoginRequiredMixin, DeleteView):
+    model = WebAppearance
+    context_object_name = 'web_appearance'
+    success_url = reverse_lazy('success')
+
+    def get_queryset(self):
+        qs = super(WebAppearanceDelete, self).get_queryset().filter(informant=self.request.user)
+        return qs
+    
+    def get(self, *args, **kwargs):
+        return redirect('success')
+
 class DashboardCreate(LoginRequiredMixin, CreateView):
     model = Dashboard
     fields = [

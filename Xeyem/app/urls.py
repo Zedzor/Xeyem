@@ -1,6 +1,6 @@
 from django import urls
 from django.urls import path
-from .views import DashboardDelete, DashboardDetail, CustomLoginView, DashboardUpdate, HomeView, NoteCreate, NoteDelete, NoteList, RegisterPage, DashboardCreate, SearchList, DashboardList, success
+from .views import DashboardDelete, DashboardDetail, WebAppearanceCreate, WebAppearanceDelete, AddressDelete, AddressList, CustomLoginView, AddressCreate, DashboardUpdate, HomeView, NoteCreate, NoteDelete, NoteList, RegisterPage, DashboardCreate, SearchList, DashboardList, success, handle_vote
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -22,4 +22,11 @@ urlpatterns = [
     path('note-delete/<int:pk>/', NoteDelete.as_view(), name='note-delete'),
 
     path('note-create/success/', success, name='success'),
+    path('vote/<int:pk>', handle_vote, name='vote'),
+    path('address-create/<slug:address>', AddressCreate.as_view(), name='address-create'),
+    path('address-delete/<int:pk>/', AddressDelete.as_view(), name='address-delete'),
+    path('address-list/<slug:address>', AddressList.as_view(), name='address-list'),
+
+    path('web-create/<slug:address>', WebAppearanceCreate.as_view(), name='web-create'),
+    path('web-delete/<int:pk>/', WebAppearanceDelete.as_view(), name='web-delete'),
 ]
