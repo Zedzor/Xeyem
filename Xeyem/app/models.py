@@ -106,7 +106,7 @@ class Address(models.Model):
 
 class WebAppearance(models.Model):
     address         = models.ForeignKey(Address, to_field='address', on_delete=models.CASCADE)
-    web_address     = models.CharField(max_length=100, unique=True,null=False, blank=False)
+    web_address     = models.CharField(max_length=100,null=False, blank=False)
     informant       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
@@ -124,3 +124,5 @@ class Note(models.Model):
     wallet_address  = models.ForeignKey(Address, to_field='address', on_delete=models.CASCADE)
     note            = models.TextField(max_length=5000, null=False ,blank=False)
     date_posted     = models.DateTimeField(auto_now=True)
+    upvotes         = models.CharField(max_length=1073741824, null=True, blank=True, default="")
+    downvotes       = models.CharField(max_length=1073741824, null=True, blank=True, default="")
