@@ -1,0 +1,53 @@
+{% load app_extras %}
+<div class="col col-xl-5">
+    <div class="card h-100">
+        <div class="card-header" style="background-color:#b8daff;">
+            <h6 class="fw-semibold text-center" style="margin: 0;">TOP COMMENTS</h6>
+        </div>
+        <div class="card-body p-1">
+            {% for note in top_notes %}
+            <div class="row">
+                <div class="col">
+                    <div class="bg-white p-2">
+                        <div class="row d-flex flex-row user-info">
+                            <div class="col d-flex flex-row justify-content-start"><img class="rounded-circle p-2" src="https://i.imgur.com/NAGTvvz.png" width="40px" height="40px">
+                                <div class="d-flex flex-column justify-content-start ml-2">
+                                    <span class="fw-bold d-block name">{{note.user_id.email}}</span>
+                                    <span class="date text-black-50 pl-3">Shared on {{note.date_posted}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2"><span class="m-0 p-0">{{note.note}}</span></div>
+                    </div>
+                    <div class="bg-white p-2">
+                        <div class="row d-flex flex-row fs-12">
+                            <div class="col d-flex">
+                                <div class="like p-1 cursor">
+                                    <form action="{% url 'vote' note.id %}" class="upvote" method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="vote" value="up">
+                                        <button type="submit" class="btn btn-link text-dark p-0"><i class="fas fa-arrow-up"></i></button>
+                                    </form>
+                                </div>
+                                <div class="like p-1 cursor"><small>{{note.upvotes|total_votes:note.downvotes}}</small></div>
+                                <div class="like p-1 cursor">
+                                    <form action="{% url 'vote' note.id %}" class="downvote"  method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="vote" value="down">
+                                        <button type="submit" class="btn btn-link text-dark p-0"><i class="fas fa-arrow-down"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border"></div>
+                </div>
+            </div>
+            {% empty %} 
+            <div class="text-center" style="margin-top: 10px;">
+                <p class="text-muted mb-0">No comments yet.</p>
+            </div> 
+            {% endfor %}  
+        </div>
+    </div>
+</div>
