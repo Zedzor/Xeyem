@@ -101,7 +101,7 @@
         <!-- Navbar --> 
 
         {% if user.is_authenticated or request.path == '/login/' or request.path == '/register/' %}
-        <div class="container mt-5">
+        <div class="container-fluid mt-5 content-cont">
             {% block content %}
             {% endblock content %}
         </div>

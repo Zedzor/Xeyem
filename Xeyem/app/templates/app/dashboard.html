@@ -1,365 +1,263 @@
 {% extends 'app/index.html' %}{% block content %}
+{% load app_extras %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-<div id="search-div" class="w-50 mx-auto my-4">
-    <form class="form-inline" method="POST" action="{% url 'dashboard' dashboard.pk %}">
+<div id="search-div" class="w-50 mx-auto pt-5 my-5">
+    <form class="form-inline search-form" method="POST" action="{% url 'dashboard' dashboard.pk %}">
         {% csrf_token %}
-        <div class="input-group mb-3">
-            <input class="form-control mr-sm-2" aria-label="Search" type="text" placeholder="Search Address" name="address" maxlength="100" required="" id="id_address">  
-            <div class="input-group-append">
-                <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
-            </div>
+        <div class="input-group">
+            <input class="form-control" aria-label="Search" type="text" value="{{address}}" placeholder="Search Address" name="address" maxlength="100" required="" id="id_address">  
+            <button class="btn btn-outline-primary" type="submit">Search</button>
         </div>
     </form>
-</div>
-
-<!-- Page Heading -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">{{dashboard.name}} results</h1>
-    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
 </div>
 
 
 {% if results %}
 <div class="container-fluid">
-    {% if results.exchanges %}
-        <ul>
-            {% for exchange in results.exchanges %}
-                <li>{{exchange}}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
     {% if results.balance or results.first_transaction or results.last_transaction or results.illegal_activity %}
     <!-- Content Row -->
     <div class="row">
-        {% if results.balance %}
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 border-start border-success border-4  shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="small fw-bold text-success text-uppercase mb-1">
-                                Balance</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.balance}} BTC</div>
-                        </div>
-                        <div class="col-auto">                       
-                            <i class="fas fa-brands fa-btc fa-2x" style="color:#dee2e6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if results.first_transaction %}
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 border-start border-info border-4  shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="small fw-bold text-info text-uppercase mb-1">
-                                First Transaction</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.first_transaction}}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-regular fa-calendar fa-2x" style="color:#dee2e6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if results.last_transaction %}
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 border-start border-info border-4  shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="small fw-bold text-info text-uppercase mb-1">
-                                Last Transaction</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.last_transaction}}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-regular fa-calendar fa-2x" style="color:#dee2e6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        {% if results.illegal_activity %}
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 border-start border-warning border-4  shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="small fw-bold text-warning text-uppercase mb-1">
-                                Illegal Activity</div>
-                            <div class="h5 mb-0 font-weight-bold" style="color:#343a40">{{results.illegal_activity}}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-solid fa-skull-crossbones fa-2x" style="color:#dee2e6"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+        {% include 'app/summary-pills.html' %}
+        {% include 'app/most-trans.html' %}
+        {% include 'app/top-comments.html' %}
     </div>
     {% endif %}
-    
-    
-    {% if results.balance_time %}
-    <div class="card shadow mb-4">
-        <!-- Card Header -->
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 small fw-bold text-primary">Balance Through Time</h6>
-            {% comment %} <div class="dropdown no-arrow">
-                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                </a>
-                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                    <div class="dropdown-header">Dropdown Header:</div>
-                    <a class="dropdown-item" href="#">Action</a>
-                    <a class="dropdown-item" href="#">Another action</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Something else here</a>
-                </div>
-            </div> {% endcomment %}
-        </div>
-        <!-- Card Body -->
-        <div class="card-body">
-            {{results.balance_time|safe}}
-            {% comment %} <div class="chart-area"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
-                <canvas id="myAreaChart" style="display: block; width: 1049px; height: 320px;" class="chartjs-render-monitor" width="1049" height="320"></canvas>
-            </div> {% endcomment %}
-        </div>
-    </div>
+    {% if results.balance_time or results.exchanges %}
+    <div class="row mt-4">
+        {% include 'app/exchanges-n-time.html' %}
     {% endif %}
     {% if results.inputs_stats %}
-    <div class="row">
-
-        <!-- Inputs Column -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <!-- Card Header - Dropdown -->
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 small font-weight-bold text-primary">Inputs Stats</h6>
-                    {% comment %} <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                            <div class="dropdown-header">Dropdown Header:</div>
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                        </div>
-                    </div> {% endcomment %}
-                </div>
-                <!-- Card Body -->
-                <div class="card-body">
-                    {{results.inputs_stats|safe}}
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <!-- Card Header - Dropdown -->
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 small font-weight-bold text-primary">Outputs Stats</h6>
-                    {% comment %} <div class="dropdown no-arrow">
-                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                            <div class="dropdown-header">Dropdown Header:</div>
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                        </div>
-                    </div> {% endcomment %}
-                </div>
-                <!-- Card Body -->
-                <div class="card-body">
-                    {{results.outputs_stats|safe}}
-                </div>
-            </div>
-        </div>
+    <div class="row mt-4">
+        {% include 'app/stats.html' %}
     </div>
     {% endif %}
-
-    {% if results.web_appearances or results.related_addresses %}
     <!-- Content Row -->
-    <div class="row">
-        {% if results.web_appearances %}
-        <!-- Content Column -->
-        <div class="col-lg-6 mb-4">
-
-            <!-- Project Card Example -->
-            <div class="card shadow mb-4 h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 small fw-bold text-primary">Web appearances</h6>
-                </div>
-                <div class="card-body">
-                    <div class="overflow-auto">
-                        {% for url in results.web_appearances %}
-                        <div>
-                            <a class="h5 small fw-bold" href="{{url}}">{{url}}</a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% endif %}
-        {% if results.addresses %}
-        <!-- Content Column -->
-        <div class="col-lg-6 mb-4">
-
-            <!-- Illustrations -->
-            <div class="card shadow mb-4 h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 small fw-bold text-primary">Related Addresses</h6>
-                </div>
-                <div class="card-body">
-                    <div class="text-center overflow-auto">
-                        {% for address in results.addresses %}
-                        <h5 class="small fw-bold">{{address}}</a>
-                        {% endfor %}
-                    </div>    
-                </div>
-            </div>
-        </div>
-        {% endif %}
+    <div class="row mt-4" id="addrWrapper">
+        {% include 'app/web-addr.html' %}
     </div>
-    {% endif %}
-
     {% if results.transactions %}
     <!-- Content Row -->
-    <div class="row">
-        <!-- Content Column -->
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 small fw-bold text-primary">Transactions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <div class="table-responsive-sm">
-                            <table id="dataTable" class="table small table-striped table-sm" cellspacing="0" width="100%">
-                                <thead>
-                                    <tr>
-                                    <th class="th-sm">Hash
-                                    </th>
-                                    <th class="th-lg">Date
-                                    </th>
-                                    <th class="th-sm">Sent or Received
-                                    </th>
-                                    <th class="th-sm">Inputs
-                                    </th>
-                                    <th class="th-sm">Outputs
-                                    </th>
-                                    <th class="th-sm">Value
-                                    </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for transaction in results.transactions %}
-                                    <tr>
-                                        <td><a href="https://www.blockchain.com/btc/tx/{{transaction.hash}}">{{transaction.hash}}</a></td>
-                                        <td>{{transaction.date}}</td>
-                                        <td>{% if transaction.is_input %} Sent {% else %} Received {% endif %}</td>
-                                        <td>{{transaction.inputs.0.address}}</td>
-                                        <td>{{transaction.outputs.0.address}}</td>
-                                        <td>{{transaction.value}}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th>Hash
-                                        </th>
-                                        <th>Date
-                                        </th>
-                                        <th>Sent or Received
-                                        </th>
-                                        <th>Inputs
-                                        </th>
-                                        <th>Outputs
-                                        </th>
-                                        <th>Value
-                                        </th>
-                                    </tr>
-                                </tfoot>
-                            </table>
+    <div class="row mt-4">
+        {% include 'app/transactions.html' %}
+    </div>
+    {% endif %}
+
+
+    <!-- ############################################################################################## -->
+    <!-- NOTE SECTION-->
+    <div class="row mt-4">
+        <div class="col">
+            <h3>Leave your notes and contribute!</h3>
+            <div class="row d-flex flex-row justify-content-center" id="note" name="note">
+                <div class="col d-flex flex-column col-md-8">
+                    <div class="row">
+                        <div class="col" id="comment-list-wrapper">
+                            {% include 'app/note_list.html' %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="comment-form-wrapper">
+                                <form class="bg-light p-2 comment-form">
+                                    {% csrf_token %}
+                                    <div class="row d-flex flex-row align-items-start">
+                                        <div class="col d-inline-flex">
+                                            <img class="rounded-circle p-2" src="https://i.imgur.com/NAGTvvz.png" width="40px" height="40px">
+                                            <textarea class="form-control ml-1 shadow-none textarea p-3" name="note"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-right"><button class="btn btn-primary btn-sm shadow-none" type="submit">Button</button></div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
-    
-    
-    <!-- Comment section -->
-    <div class="container mt-5">
-        <h2>Leave your notes and contribute!</h2>
-        <div class="d-flex justify-content-center row">
-            <div class="col-md-8">
-                <div class="d-flex flex-column comment-section">
-                    <div id="comment-list-wrapper" class="comment-list-wrapper">
-                        {% include 'app/note_list.html' %}  
-                    </div>
-                    <div class="comment-form-wrapper">
-                        <form method="POST" id="#comment-form" class="bg-light p-2 comment-form">
-                            {% csrf_token %}
-                            <div class="d-flex flex-row align-items-start">
-                                <img class="rounded-circle p-2" src="https://i.imgur.com/NAGTvvz.png" width="40">
-                                <textarea class="form-control ml-1 shadow-none textarea p-3" id="note" name="note"></textarea>
-                            </div>
-                            <div class="mt-2 text-right">
-                                <button class="btn btn-primary btn-sm shadow-none" type="submit">Post note</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- NOTE SECTION-->
 </div>
 <script>  
-    $(document).ready(function() {
-        $('.comment-form').submit(function(e){
-            e.preventDefault();
-            var $form = $(this);
-            var serializedData = $form.serialize();
-            $.ajax({
-                type:'POST',
-                url:`{% url "note-create" address %}`,
-                data: serializedData,
-                dataType: "json",
-                success:function(){
-                    $(".comment-form")[0].reset();
-                    $.ajax({
-                        type:'GET',
-                        url:`{% url "note-list" address %}`,
-                        success:function(data){
-                            $('#comment-list-wrapper').html(data);
-                        }
-                    });
-                },
-                error : function(xhr,errmsg,err) {
+$(document).ready(function() {
+    $('.comment-form').submit(function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $.ajax({
+            type:'POST',
+            url:`{% url "note-create" address %}`,
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $(".comment-form")[0].reset();
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "note-list" address %}`,
+                    success:function(data){
+                        $('#comment-list-wrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
                 console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
             }
-            });
-        });      
+        });
+    });   
+    $(document).on('submit', '.relatedAddresses', function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $('#addressCreateModal').modal('hide');
+        $.ajax({
+            type:'POST',
+            url: $form.attr('action'),
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "address-list" address %}`,
+                    success:function(data){
+                        console.log(data);
+                        $('#addrWrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
+                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+            }
+        });
     });
-    
+    $(document).on('submit', '.deleteAddr', function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $.ajax({
+            type:'POST',
+            url: $form.attr('action'),
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "address-list" address %}`,
+                    success:function(data){
+                        console.log(data);
+                        $('#addrWrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
+                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+            }
+        });
+    });
+    $(document).on('submit', '.relatedWebsites', function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $('#webCreateModal').modal('hide');
+        $.ajax({
+            type:'POST',
+            url: $form.attr('action'),
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "address-list" address %}`,
+                    success:function(data){
+                        console.log(data);
+                        $('#addrWrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
+                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+            }
+        });
+    });
+    $(document).on('submit', '.deleteWeb', function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $.ajax({
+            type:'POST',
+            url: $form.attr('action'),
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "address-list" address %}`,
+                    success:function(data){
+                        console.log(data);
+                        $('#addrWrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
+                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+            }
+        });
+    });
+});
+</script>
+<script>
+$(function() {
+    $(document).on('submit', '.upvote', function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $.ajax({
+            type:'POST',
+            url: $form.attr('action'),
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "note-list" address %}`,
+                    success:function(data){
+                        $('#comment-list-wrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
+                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+            }
+        
+        });
+    }); 
+});
+</script>
+<script>
+$(function() {
+    $(document).on('submit', '.downvote', function(e){
+        e.preventDefault();
+        var $form = $(this);
+        var serializedData = $form.serialize();
+        $.ajax({
+            type:'POST',
+            url: $form.attr('action'),
+            data: serializedData,
+            dataType: "json",
+            success:function(){
+                $.ajax({
+                    type:'GET',
+                    url:`{% url "note-list" address %}`,
+                    success:function(data){
+                        $('#comment-list-wrapper').html(data);
+                    }
+                });
+            },
+            error : function(xhr,errmsg,err) {
+                console.log(xhr.status + ": " + xhr.responseText); // provide a bit more info about the error to the console
+            }
+        });
+    });
+});    
 </script>
 
 {% else %}
@@ -389,7 +287,11 @@
 <style>
     .date{font-size: 11px}.comment-text{font-size: 12px}.fs-12{font-size: 12px}.shadow-none{box-shadow: none}.name{color: #007bff}.cursor:hover{color: blue}.cursor{cursor: pointer}.textarea{resize: none}
 </style>
-
+<style>
+    .badge-soft-purple {
+        background: rgba(155, 0, 252, 0.18);
+    }
+</style>
 
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.2.0/css/bootstrap.min.css">

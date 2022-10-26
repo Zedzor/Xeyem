@@ -1,5 +1,6 @@
+{% load app_extras %}
 {% for note in notes %}
-<div class="bg-white p-2">
+{% comment %} <div class="bg-white p-2">
     <div class="d-flex flex-row user-info">
         <img class="rounded-circle p-2" src="https://i.imgur.com/NAGTvvz.png" width="40">
         <div class="d-flex flex-column justify-content-start ml-2">
@@ -10,5 +11,44 @@
     <div class="mt-2">
         <p class="comment-text">{{note.note}}</p>
     </div>
+</div> {% endcomment %}
+        
+
+<div class="row">
+    <div class="col">
+        <div class="bg-white p-2">
+            <div class="row d-flex flex-row user-info">
+                <div class="col d-flex flex-row justify-content-start"><img class="rounded-circle p-2" src="https://i.imgur.com/NAGTvvz.png" width="40px" height="40px">
+                    <div class="d-flex flex-column justify-content-start ml-2">
+                        <span class="fw-bold d-block name">{{note.user_id.email}}</span>
+                        <span class="date text-black-50 pl-3">Shared on {{note.date_posted}}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2"><span class="m-0 p-0">{{note.note}}</span></div>
+        </div>
+        <div class="bg-white p-2">
+            <div class="row d-flex flex-row fs-12">
+                <div class="col d-flex">
+                    <div class="like p-1 cursor">
+                        <form action="{% url 'vote' note.id %}" class="upvote" method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="vote" value="up">
+                            <button type="submit" class="btn btn-link text-dark p-0"><i class="fas fa-arrow-up"></i></button>
+                        </form>
+                    </div>
+                    <div class="like p-1 cursor"><small>{{note.upvotes|total_votes:note.downvotes}}</small></div>
+                    <div class="like p-1 cursor">
+                        <form action="{% url 'vote' note.id %}" class="downvote"  method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="vote" value="down">
+                            <button type="submit" class="btn btn-link text-dark p-0"><i class="fas fa-arrow-down"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border"></div>
+    </div>
 </div>
-{% endfor %}          
+{% endfor %}  
